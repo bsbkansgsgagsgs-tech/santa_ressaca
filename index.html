@@ -55,6 +55,7 @@
             <nav class="nav-menu">
                 <ul>
                     <li><a href="#inicio">Início</a></li>
+                    <li><a href="#combos">Combos</a></li>
                     <li><a href="#bebidas">Bebidas</a></li>
                     <li><a href="#mercado">Conveniência</a></li>
                     <li><a href="#sobre">Sobre</a></li>
@@ -79,6 +80,58 @@
             </div>
         </section>
 
+        <!-- COMBOS SECTION (Simplified) -->
+        <section id="combos" class="products category-combos">
+            <div class="container">
+                <div class="section-badge">Ofertas Exclusivas</div>
+                <h2 class="section-title">Nossos <span class="highlight">Combos</span></h2>
+
+                <div class="product-grid">
+                    <!-- COMBO SEXTÔU INSANO -->
+                    <div class="product-card aggressive-card">
+                        <div class="product-image">
+                            <img src="imagens/combo_sextou.png" alt="COMBO SEXTÔU INSANO">
+                        </div>
+                        <div class="product-info">
+                            <h3>💣 COMBO SEXTÔU INSANO</h3>
+                            <div class="combo-items">
+                                <p>• 1x Black Label</p>
+                                <p>• 2x Red Bull</p>
+                                <p>• 1x Saco de Gelo 5kg</p>
+                                <p>• 1x Cerveja Skin (Fardo)</p>
+                            </div>
+                            <span class="price">R$ 179,90</span>
+                            <button class="btn-card"
+                                onclick="openOrderModal('COMBO SEXTÔU INSANO', 179.90, '✅ 1x Black Label\\n✅ 2x Red Bull\\n✅ 1x Gelo 5kg\\n✅ 1x Cerveja Skin (Fardo)')">
+                                Pedir Combo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- COMBO CHURRAS GARANTIDO -->
+                    <div class="product-card aggressive-card">
+                        <div class="product-image">
+                            <img src="imagens/COMBO CHURRAS GARANTIDO.png" alt="COMBO CHURRAS GARANTIDO">
+                        </div>
+                        <div class="product-info">
+                            <h3>🔥 COMBO CHURRAS GARANTIDO</h3>
+                            <div class="combo-items">
+                                <p>• 1x Carvão 5kg</p>
+                                <p>• 1x Sal Grosso</p>
+                                <p>• 12x Cervejas</p>
+                                <p>• 1x Refri 2L</p>
+                            </div>
+                            <span class="price">R$ 109,90</span>
+                            <button class="btn-card"
+                                onclick="openOrderModal('COMBO CHURRAS GARANTIDO', 109.90, '✅ 1x Carvão 5kg\\n✅ 1x Sal Grosso\\n✅ 12x Cervejas\\n✅ 1x Refri 2L')">
+                                Pedir Combo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- BEBIDAS SECTION -->
         <section id="bebidas" class="products category-drinks">
             <div class="container">
@@ -94,8 +147,9 @@
                             <h3>Black-Label</h3>
                             <p>Gelada no ponto certo.</p>
                             <span class="price">R$ 150,00</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20o%20Black%20Label."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Black Label', 150, '🥃 Gelada no ponto certo.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                     <!-- Produto 2 -->
@@ -107,8 +161,9 @@
                             <h3>Cerveja Corona</h3>
                             <p>A refrescância que você conhece.</p>
                             <span class="price">R$ 7,50</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20a%20Cerveja%20Corona."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Cerveja Corona', 7.50, '🍺 A refrescância que você conhece.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                     <!-- Produto 3 -->
@@ -121,8 +176,9 @@
                             <h3>Whisky White Horse</h3>
                             <p>O clássico Blended Scotch Whisky.</p>
                             <span class="price">R$ 97,00</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20o%20Whisky%20White%20Horse."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Whisky White Horse', 97, '🥃 O clássico Blended Scotch Whisky.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                     <!-- Produto 4 -->
@@ -134,13 +190,16 @@
                             <h3>Kit Mansão Maromba</h3>
                             <p>O kit completo para a sua resenha ser épica.</p>
                             <span class="price">R$ 25,00</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20o%20Kit%20Mans%C3%A3o%20Maromba."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Kit Mansão Maromba', 25, '💪 O kit completo para a sua resenha ser épica.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+
+
 
         <!-- CONVENIENCIA / MERCADO SECTION -->
         <section id="mercado" class="products category-market">
@@ -158,8 +217,9 @@
                             <h3>Coca Lata</h3>
                             <p>Gelada e refrescante.</p>
                             <span class="price">R$ 6,00</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20uma%20Coca%20Lata."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Coca Lata', 6, '🥤 Gelada e refrescante.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                     <!-- Produto 5 -->
@@ -171,8 +231,9 @@
                             <h3>Mix Salgadinhos</h3>
                             <p>O acompanhamento perfeito.</p>
                             <span class="price">R$ 15,90</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20o%20Mix%20Salgadinhos."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Mix Salgadinhos', 15.90, '🍿 O acompanhamento perfeito.')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                     <!-- Produto 6 -->
@@ -184,8 +245,9 @@
                             <h3>Saco de Gelo 5kg</h3>
                             <p>Não deixe esquentar!</p>
                             <span class="price">R$ 10,00</span>
-                            <a href="https://api.whatsapp.com/send?phone=555195469856&text=Ol%C3%A1!%20Gostaria%20de%20pedir%20um%20Saco%20de%20Gelo%205kg."
-                                target="_blank" class="btn-card">Pedir Agora</a>
+                            <button class="btn-card"
+                                onclick="openOrderModal('Saco de Gelo 5kg', 10, '❄️ Não deixe esquentar!')">Pedir
+                                Agora</button>
                         </div>
                     </div>
                 </div>
@@ -285,6 +347,150 @@
                 fill="#fff" />
         </svg>
     </a>
+
+    <!-- ORDER MODAL -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content aggressive-border">
+            <span class="close-btn" onclick="closeOrderModal()">&times;</span>
+            <h2 class="modal-title">FINALIZAR <span class="highlight">PEDIDO</span></h2>
+
+            <div id="orderSummary" class="order-summary">
+                <p id="modalProductName">Combo Sextou</p>
+                <p id="modalProductPrice">R$ 220,00</p>
+            </div>
+
+            <form id="deliveryForm" class="delivery-form">
+                <div class="input-group">
+                    <label>Seu Bairro (Canoas)</label>
+                    <select id="neighborhood" required onchange="updateDeliveryFee()">
+                        <option value="" disabled selected>Selecione seu bairro</option>
+                        <option value="Centro" data-fee="5">Centro - R$ 5,00</option>
+                        <option value="Marechal Rondon" data-fee="7">Marechal Rondon - R$ 7,00</option>
+                        <option value="Nossa Senhora das Graças" data-fee="7">Nossa Senhora das Graças - R$ 7,00
+                        </option>
+                        <option value="Igara" data-fee="8">Igara - R$ 8,00</option>
+                        <option value="Guajuviras" data-fee="10">Guajuviras - R$ 10,00</option>
+                        <option value="Mathias Velho" data-fee="8">Mathias Velho - R$ 8,00</option>
+                        <option value="Fátima" data-fee="10">Fátima - R$ 10,00</option>
+                        <option value="Niterói" data-fee="12">Niterói - R$ 12,00</option>
+                        <option value="Rio Branco" data-fee="15">Rio Branco - R$ 15,00</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Endereço Completo</label>
+                    <input type="text" id="address" placeholder="Rua e Número da casa" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Complemento (Opcional)</label>
+                    <input type="text" id="complement" placeholder="Apto, Bloco, etc.">
+                </div>
+
+                <div class="delivery-total">
+                    <p>Taxa de Entrega: <span id="modalFee">R$ 0,00</span></p>
+                    <p class="final-price">Total: <span id="modalTotal">R$ 0,00</span></p>
+                </div>
+
+                <button type="button" class="btn-primary aggressive w-full" onclick="sendOrderToWhatsApp()">Confirmar
+                    Pedido</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // TAB SYSTEM
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                const tabId = btn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // ORDER SYSTEM
+        let currentProduct = {
+            name: '',
+            price: 0,
+            items: ''
+        };
+
+        function openOrderModal(name, price, items) {
+            currentProduct = { name, price, items };
+            document.getElementById('modalProductName').innerText = name;
+            document.getElementById('modalProductPrice').innerText = `R$ ${price.toFixed(2)}`;
+            document.getElementById('modalTotal').innerText = `R$ ${price.toFixed(2)}`;
+            document.getElementById('modalFee').innerText = 'R$ 0,00';
+            document.getElementById('neighborhood').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('complement').value = '';
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        function updateDeliveryFee() {
+            const select = document.getElementById('neighborhood');
+            const fee = parseFloat(select.options[select.selectedIndex].getAttribute('data-fee')) || 0;
+            const total = currentProduct.price + fee;
+
+            document.getElementById('modalFee').innerText = `R$ ${fee.toFixed(2)}`;
+            document.getElementById('modalTotal').innerText = `R$ ${total.toFixed(2)}`;
+        }
+
+        function sendOrderToWhatsApp() {
+            const neighborhood = document.getElementById('neighborhood').value;
+            const address = document.getElementById('address').value;
+            const complement = document.getElementById('complement').value;
+            const fee = parseFloat(document.getElementById('neighborhood').options[document.getElementById('neighborhood').selectedIndex].getAttribute('data-fee')) || 0;
+
+            if (!neighborhood || !address) {
+                alert('Por favor, preencha o endereço de entrega.');
+                return;
+            }
+
+            const total = currentProduct.price + fee;
+            const phone = "555195469856";
+
+            // Format Title based on whether it is a Combo or regular product
+            const isCombo = currentProduct.name.toLowerCase().includes('combo');
+            const titleEmoji = isCombo ? '🍺' : '🛒';
+
+            let message = `🚀 *NOVO PEDIDO - SANTA RESSACA* 🚀\n\n`;
+            message += `${titleEmoji} *${currentProduct.name.toUpperCase()}* ${titleEmoji}\n\n`;
+
+            // Fix line breaks if they are coming as literal characters
+            const formattedItems = currentProduct.items.replace(/\\n/g, '\n');
+            message += `${formattedItems}\n\n`;
+            message += `📍 *ENDEREÇO DE ENTREGA* 📍\n`;
+            message += `--------------------------\n`;
+            message += `🏡 *Bairro:* ${neighborhood}\n`;
+            message += `🛣️ *Rua/Nº:* ${address}\n`;
+            if (complement) message += `🏢 *Comp:* ${complement}\n`;
+            message += `\n--------------------------\n`;
+            message += `💰 *Subtotal:* R$ ${currentProduct.price.toFixed(2).replace('.', ',')}\n`;
+            message += `🚚 *Taxa Tele:* R$ ${fee.toFixed(2).replace('.', ',')}\n`;
+            message += `✅ *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*\n\n`;
+            message += `*Pode confirmar meu pedido?*`;
+
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
+            closeOrderModal();
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('orderModal');
+            if (event.target == modal) closeOrderModal();
+        }
+    </script>
 
 </body>
 
