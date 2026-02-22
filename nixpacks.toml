@@ -1,0 +1,36 @@
+[phases.setup]
+nixPkgs = [
+  "chromium",
+  "glib",
+  "nss",
+  "nspr",
+  "atk",
+  "at-spi2-atk",
+  "cups",
+  "dbus",
+  "expat",
+  "libdrm",
+  "libxkbcommon",
+  "mesa",
+  "pango",
+  "xorg.libX11",
+  "xorg.libXcomposite",
+  "xorg.libXdamage",
+  "xorg.libXext",
+  "xorg.libXfixes",
+  "xorg.libXrandr",
+  "xorg.libxcb",
+  "xorg.libXcursor",
+  "xorg.libXi",
+  "xorg.libXrender",
+  "xorg.libXtst",
+  "libxshmfence",
+  "alsa-lib",
+  "at-spi2-core"
+]
+
+[phases.install]
+cmds = ["npm install"]
+
+[start]
+cmd = "node server.js"

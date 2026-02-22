@@ -16,11 +16,26 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3005;
 
 // WhatsApp Client Initialization
+const puppeteerOptions = {
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+    ],
+};
+
+// Usa o Chromium do sistema se disponível (necessário no Railway/Linux)
+if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    puppeteerOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+}
+
 const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    }
+    puppeteer: puppeteerOptions,
 });
 
 let qrCodeData = null;
