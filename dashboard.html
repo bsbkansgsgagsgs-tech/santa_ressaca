@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Gestor | Santa Ressaca</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+        :root {
+            --black: #000000;
+            --yellow: #FFFF33;
+            --dark-gray: #0d0d0d;
+            --light-gray: #1a1a1a;
+            --border: #222222;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --sidebar-w: 260px;
+            --accent: #FFFF33;
+            --bg-page: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        .logo-area,
+        .nav-label,
+        .btn-primary,
+        .col-title,
+        .stat-label {
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        body {
+            background: var(--bg-page);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            background: var(--dark-gray);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 32px 20px;
+            z-index: 100;
+        }
+
+        .logo-area {
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #fff;
+            text-align: center;
+        }
+
+        .logo-area span {
+            color: var(--yellow);
+        }
+
+        .nav-group {
+            margin-bottom: 32px;
+        }
+
+        .nav-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding: 0 12px;
+            letter-spacing: 2px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: 'Bebas Neue', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .nav-item:hover {
+            background: var(--light-gray);
+            color: var(--yellow);
+        }
+
+        .nav-item.active {
+            background: var(--yellow);
+            color: var(--black);
+        }
+
+        .stats-box-sidebar {
+            margin-top: auto;
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-item-sidebar {
+            margin-bottom: 12px;
+        }
+
+        .stat-item-sidebar:last-child {
+            margin-bottom: 0;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-val {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #fff;
+            display: block;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-page);
+            min-width: 0;
+        }
+
+        .top-bar {
+            height: 72px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            background: #000;
+        }
+
+        .top-bar h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        /* DASHBOARD VIEWS */
+        .dashboard-view {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .dashboard-view.active {
+            display: block;
+        }
+
+        /* KANBAN BOARD */
+        #view-pedidos {
+            padding: 0;
+            overflow: hidden;
+            display: none;
+            height: 100%;
+        }
+
+        #view-pedidos.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kanban-board {
+            display: flex;
+            padding: 24px;
+            gap: 24px;
+            overflow-x: auto;
+            flex: 1;
+            align-items: flex-start;
+        }
+
+        .kanban-col {
+            min-width: 320px;
+            max-width: 400px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--dark-gray);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            max-height: 100%;
+        }
+
+        .col-header {
+            padding: 16px 20px;
+            border-bottom: 2px solid var(--yellow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--dark-gray);
+            border-radius: 12px 12px 0 0;
+            z-index: 10;
+        }
+
+        .col-title {
+            font-size: 1.1rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .col-count {
+            background: var(--yellow);
+            color: var(--black);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 0.8rem;
+        }
+
+        .order-list-admin {
+            padding: 12px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* CARDS */
+        .admin-order-card {
+            background: var(--black);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: 0.2s;
+        }
+
+        .admin-order-card:hover {
+            border-color: var(--yellow);
+            transform: translateY(-2px);
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .order-id {
+            font-size: 1rem;
+            color: var(--yellow);
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        .order-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .customer-name {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .customer-phone {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .payment-badge {
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .payment-pago {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        .payment-pendente {
+            background: rgba(255, 255, 51, 0.1);
+            color: var(--yellow);
+            border: 1px solid var(--yellow);
+        }
+
+        .order-items-box {
+            background: var(--dark-gray);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #ccc;
+            margin-bottom: 12px;
+            white-space: pre-line;
+            border: 1px solid var(--border);
+        }
+
+        .order-address {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .order-price {
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: #fff;
+            font-family: 'Bebas Neue', sans-serif;
+        }
+
+        /* BUTTONS */
+        .btn-move {
+            background: var(--yellow);
+            color: var(--black);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-move:hover {
+            filter: brightness(1.2);
+            scale: 1.05;
+        }
+
+        .btn-action-small {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-action-small:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+
+        /* TABLES */
+        .admin-table-container {
+            background: var(--dark-gray);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 16px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            color: var(--yellow);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .admin-table td {
+            padding: 16px;
+            font-size: 0.9rem;
+            color: #fff;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .prod-img-table {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--dark-gray);
+            border: 1px solid var(--yellow);
+            border-radius: 16px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-family: 'Bebas Neue', sans-serif;
+            color: var(--yellow);
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
+            width: 100%;
+            background: var(--black) !important;
+            border: 1px solid var(--border) !important;
+            padding: 12px !important;
+            color: #fff !important;
+            border-radius: 8px !important;
+            outline: none;
+        }
+
+        /* SEARCH AREA */
+        .search-area {
+            display: flex;
+            align-items: center;
+            background: var(--dark-gray);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            gap: 12px;
+        }
+
+        .search-area input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            outline: none;
+            font-size: 0.9rem;
+            width: 200px;
+        }
+
+        .btn-primary {
+            background: var(--yellow);
+            color: var(--black);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: #fff;
+        }
+
+        .highlight {
+            color: var(--yellow);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="floating-chat-container">
+        <div class="chat-panel" id="chat-panel">
+            <div class="chat-panel-header">
+                <h3>💬 Chat Integrado (WA)</h3>
+                <button onclick="toggleChat()"
+                    style="background:none; border:none; color:#888; cursor:pointer;">✕</button>
+            </div>
+            <div class="order-selector">
+                <select id="chat-order-select" onchange="loadSelectedOrderChat()">
+                    <option value="">Selecione um pedido para conversar...</option>
+                </select>
+            </div>
+            <div id="chat-messages-container">
+                <div style="text-align:center; color:#666; margin-top:20px;">Selecione um pedido acima para ver as
+                    mensagens</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Digite sua mensagem..."
+                    onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button class="btn-yellow" onclick="sendChatMessage()" style="padding: 10px;">ENVIAR</button>
+            </div>
+        </div>
+        <button class="chat-toggle-btn" onclick="toggleChat()">
+            💬
+            <div class="chat-badge" id="chat-badge">0</div>
+        </button>
+    </div>
+    <aside class="sidebar">
+        <div class="logo-area">
+            SANTA <span>RESSACA</span>
+        </div>
+
+        <nav class="nav-group">
+            <div class="nav-label">OPERAÇÕES</div>
+            <div class="nav-item active" onclick="switchView('pedidos', this)">
+                VISÃO GERAL
+            </div>
+            <div class="nav-item" onclick="switchView('relatorios', this)">
+                RELATÓRIOS
+            </div>
+        </nav>
+
+        <nav class="nav-group">
+            <div class="nav-label">INVENTÁRIO</div>
+            <div class="nav-item" onclick="switchView('produtos', this)">
+                PRODUTOS
+            </div>
+        </nav>
+
+        <nav class="nav-group">
+            <div class="nav-label">SISTEMA</div>
+            <div class="nav-item" onclick="switchView('configuracoes', this)">
+                CONFIGURAÇÕES
+            </div>
+        </nav>
+
+        <div class="stats-box-sidebar">
+            <div class="stat-item-sidebar">
+                <span class="stat-label">Faturamento Hoje</span>
+                <span class="stat-val" id="today-revenue">R$ 0,00</span>
+            </div>
+            <div class="stat-item-sidebar">
+                <span class="stat-label">Pedidos Hoje</span>
+                <span class="stat-val" id="today-count">0</span>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <h2>SANTA <span style="color:var(--accent)">RESSACA</span></h2>
+            <div style="display: flex; align-items: center; gap: 24px;">
+                <div id="status-badge"
+                    style="font-size: 0.8rem; font-weight: 900; color: #10b981; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; font-family: 'Bebas Neue', sans-serif;">
+                    <span
+                        style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);"></span>
+                    SISTEMA ONLINE
+                </div>
+                <a href="/api/admin/logout" class="btn-move"
+                    style="text-decoration: none; display: flex; align-items: center; justify-content: center;">SAIR</a>
+            </div>
+        </header>
+
+        <div id="toast-container"></div>
+
+        <!-- VIEW: PEDIDOS (KANBAN) -->
+        <section id="view-pedidos" class="dashboard-view active">
+            <section class="kanban-board">
+                <!-- PENDENTE -->
+                <div class="kanban-col">
+                    <div class="col-header pendente">
+                        <span class="col-title">📥 NOVOS PEDIDOS</span>
+                        <span class="col-count" id="count-pendente">0</span>
+                    </div>
+                    <div id="list-pendente" class="order-list-admin"></div>
+                </div>
+
+                <!-- EM PREPARO -->
+                <div class="kanban-col">
+                    <div class="col-header em_preparo">
+                        <span class="col-title">👨‍🍳 EM PREPARO</span>
+                        <span class="col-count" id="count-em_preparo">0</span>
+                    </div>
+                    <div id="list-em_preparo" class="order-list-admin"></div>
+                </div>
+
+                <!-- SAIU ENTREGA -->
+                <div class="kanban-col">
+                    <div class="col-header saiu_entrega">
+                        <span class="col-title">🛵 SAIU ENTREGA</span>
+                        <span class="col-count" id="count-saiu_entrega">0</span>
+                    </div>
+                    <div id="list-saiu_entrega" class="order-list-admin"></div>
+                </div>
+
+                <!-- ENTREGUE -->
+                <div class="kanban-col">
+                    <div class="col-header entregue">
+                        <span class="col-title">✅ FINALIZADOS</span>
+                        <span class="col-count" id="count-entregue">0</span>
+                    </div>
+                    <div id="list-entregue" class="order-list-admin"></div>
+                </div>
+            </section>
+        </section>
+
+        <!-- VIEW: RELATORIOS -->
+        <section id="view-relatorios" class="dashboard-view">
+            <h3>📊 Relatórios de Vendas</h3>
+            <div class="placeholder-content">
+                <div class="stats-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+                    <div class="stats-box-sidebar">
+                        <span class="stat-label">Vendas Brutas (Mês)</span>
+                        <span class="stat-val">R$ 4.250,00</span>
+                    </div>
+                    <div class="stats-box-sidebar">
+                        <span class="stat-label">Ticket Médio</span>
+                        <span class="stat-val">R$ 85,00</span>
+                    </div>
+                    <div class="stats-box-sidebar">
+                        <span class="stat-label">Top Produtos</span>
+                        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;">
+                            1. Combo Sextou<br>2. Cerveja Corona<br>3. Gelo 5kg
+                        </p>
+                    </div>
+                </div>
+                <p style="margin-top: 60px; color: var(--text-muted); text-align: center; font-size: 0.875rem;">
+                    Gráficos detalhados serão implementados na próxima versão.
+                </p>
+            </div>
+        </section>
+
+        <!-- VIEW: PRODUTOS -->
+        <section id="view-produtos" class="dashboard-view">
+            <div class="view-header"
+                style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px;">
+                <div>
+                    <h1>ESTOQUE</h1>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Gerencie os itens do seu
+                        cardápio</p>
+                </div>
+                <div style="display: flex; gap: 16px;">
+                    <div class="search-area">
+                        <span>🔍</span>
+                        <input type="text" id="product-search" placeholder="Buscar produto..."
+                            onkeyup="filterProducts()">
+                    </div>
+                    <button class="btn-move" onclick="openProductModal()" style="padding: 12px 24px;">+ ADICIONAR
+                        ITEM</button>
+                </div>
+            </div>
+
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>IMG</th>
+                            <th>PRODUTO</th>
+                            <th>CATEGORIA</th>
+                            <th>PREÇO</th>
+                            <th>STATUS</th>
+                            <th style="text-align: right;">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-tbody">
+                        <!-- Dinâmico -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- MODAL: PRODUTO -->
+        <div id="productModal" class="modal">
+            <div class="modal-content aggressive-border" style="max-width: 500px;">
+                <span class="close-btn" onclick="closeProductModal()">&times;</span>
+                <h2 id="productModalTitle" class="modal-title">NOVO <span class="highlight">PRODUTO</span></h2>
+
+                <form id="productForm" onsubmit="saveProduct(event)" class="delivery-form">
+                    <input type="hidden" id="prod-id">
+
+                    <div class="input-group">
+                        <label>Nome do Produto</label>
+                        <input type="text" id="prod-name" placeholder="Ex: Combo Sextou" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Categoria</label>
+                        <select id="prod-category" required>
+                            <option value="Combos">Combos</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Conveniência">Conveniência</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Descrição / Itens (Separar por linha)</label>
+                        <textarea id="prod-description" rows="3" placeholder="✅ 1x Black Label\n✅ 2x Red Bull"
+                            style="width: 100%; background: #111; color: #fff; border: 1px solid #333; border-radius: 6px; padding: 10px;"></textarea>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Preço (R$)</label>
+                        <input type="number" id="prod-price" step="0.01" placeholder="0.00" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>URL da Imagem</label>
+                        <input type="text" id="prod-image" placeholder="imagens/foto.png">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Status</label>
+                        <select id="prod-status">
+                            <option value="true">Ativo</option>
+                            <option value="false">Inativo</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary aggressive w-full">SALVAR PRODUTO</button>
+                    <button type="button" id="btn-delete-prod" class="btn-secondary w-full"
+                        style="margin-top: 10px; display: none; color: #f44336;" onclick="deleteProduct()">EXCLUIR
+                        PRODUTO</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: CHAT INTERNO -->
+        <div id="adminChatModal" class="modal">
+            <div class="modal-content aggressive-border" style="max-width: 600px;">
+                <span class="close-btn" onclick="closeAdminChatModal()">&times;</span>
+                <h2 class="modal-title">CHAT COM <span class="highlight" id="admin-chat-customer-name">CLIENTE</span>
+                </h2>
+                <div class="order-id-badge" style="margin-bottom: 15px;">Pedido #<span
+                        id="admin-chat-order-id">---</span></div>
+
+                <div id="admin-chat-messages" class="chat-messages-container">
+                    <!-- Mensagens -->
+                </div>
+
+                <form onsubmit="sendAdminChat(event)" class="chat-input-row">
+                    <input type="text" id="admin-chat-input" placeholder="Digite sua resposta..." required>
+                    <button type="submit" class="btn-primary aggressive" style="padding: 10px 20px;">RESPONDER</button>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- VIEW: SETTINGS (CONFIGURACOES) -->
+        <section id="view-configuracoes" class="dashboard-view" style="padding: 40px; overflow-y: auto;">
+            <div style="max-width: 1200px;">
+                <h1
+                    style="font-size: 1.5rem; font-weight: 800; margin-bottom: 40px; color: #fff; letter-spacing: -0.03em;">
+                    Configurações do Sistema</h1>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 32px;">
+                    <!-- STORE OPERATIONS -->
+                    <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px;">
+                        <h3
+                            style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.1em;">
+                            Operação</h3>
+
+                        <div style="display: flex; flex-direction: column; gap: 24px;">
+                            <div class="input-group">
+                                <label>Status da Loja</label>
+                                <select id="config-status">
+                                    <option value="aberta">ONLINE & ABERTA</option>
+                                    <option value="fechada">OFFLINE & FECHADA</option>
+                                </select>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="input-group">
+                                    <label>Tempo de Entrega</label>
+                                    <input type="text" id="config-time" placeholder="30-45 min">
+                                </div>
+                                <div class="input-group">
+                                    <label>Info Fechamento</label>
+                                    <input type="text" id="config-closing" placeholder="Em breve">
+                                </div>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Horário de Funcionamento</label>
+                                <input type="text" id="config-hours" placeholder="Seg a Sáb, 18:00 - 03:00">
+                            </div>
+
+                            <button class="btn-move" onclick="saveSettings()" style="width: 100%; padding: 14px;">SALVAR
+                                ALTERAÇÕES</button>
+                        </div>
+                    </div>
+
+                    <!-- WHATSAPP SERVICE -->
+                    <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px;">
+                        <h3
+                            style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.1em;">
+                            Serviço de Mensagens</h3>
+
+                        <div
+                            style="background: #09090b; padding: 20px; border-radius: 12px; border: 1px solid #27272a; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                            <span id="wa-status-dot" class="wa-status-circle disconnected"
+                                style="width: 10px; height: 10px;"></span>
+                            <span id="wa-status-badge"
+                                style="font-weight: 800; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase;">Desconectado</span>
+                        </div>
+
+                        <p id="wa-instruction"
+                            style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 24px; text-align: center; line-height: 1.6;">
+                            Inicie o servidor de mensagens para conectar sua conta.</p>
+
+                        <div id="qr-container"
+                            style="display: none; background: #fff; padding: 16px; border-radius: 12px; margin: 0 auto 24px; width: fit-content; box-shadow: 0 8px 24px rgba(0,0,0,0.5);">
+                            <canvas id="qr-canvas" style="display: block;"></canvas>
+                        </div>
+
+                        <div id="wa-actions" style="display: none; flex-direction: column; gap: 12px;">
+                            <button class="btn-move" onclick="window.open('https://web.whatsapp.com', '_blank')"
+                                style="background: #25d366; color: #000;">ABRIR WHATSAPP WEB</button>
+                            <button onclick="logoutWhatsApp()"
+                                style="background: transparent; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.8125rem;">DESCONECTAR
+                                CONTA</button>
+                        </div>
+                    </div>
+
+                    <!-- MERCADO PAGO CONFIGURATION -->
+                    <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px;">
+                        <h3
+                            style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.1em;">
+                            Pagamentos (Mercado Pago)</h3>
+
+                        <div style="display: flex; flex-direction: column; gap: 24px;">
+                            <div class="input-group">
+                                <label>Access Token</label>
+                                <input type="password" id="config-mp-token" placeholder="APP_USR-...">
+                                <p
+                                    style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
+                                    Seu token de acesso privado para processar pagamentos.
+                                </p>
+                            </div>
+                            <button class="btn-move" onclick="saveMPSettings()"
+                                style="width: 100%; background: #009ee3; color: #fff; padding: 14px;">SALVAR
+                                CONFIGURAÇÃO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2857/2857-preview.mp3"
+        preload="auto"></audio>
+
+    <script>
+        const socket = io();
+        const notifSound = document.getElementById('notif-sound');
+        let orders = [];
+
+        async function init() {
+            await Promise.all([
+                fetchOrders(),
+                fetchStats(),
+                fetchProducts(),
+                fetchSettings()
+            ]);
+        }
+
+
+        function updateStoreStatusUI(status) {
+            const badge = document.getElementById('status-badge');
+            if (status === 'aberta') {
+                badge.innerText = '● Aberta';
+                badge.style.color = '#4caf50';
+            } else {
+                badge.innerText = '● Fechada';
+                badge.style.color = '#e74c3c';
+            }
+        }
+
+        socket.on('store_status_changed', (status) => {
+            updateStoreStatusUI(status);
+        });
+
+        async function fetchOrders() {
+            const res = await fetch('/api/admin/orders');
+            orders = await res.json();
+            renderBoard();
+        }
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/admin/stats');
+                const stats = await res.json();
+
+                document.getElementById('today-revenue').innerText = `R$ ${parseFloat(stats.todayRevenue).toFixed(2).replace('.', ',')}`;
+                document.getElementById('today-count').innerText = stats.todayCount;
+
+                // Mês placeholder view
+                document.querySelector('#view-relatorios .stat-val').innerText = `R$ ${parseFloat(stats.todayRevenue * 30).toFixed(2).replace('.', ',')}`; // Mock mensal
+            } catch (e) { console.error('Erro stats:', e); }
+        }
+
+        async function fetchProducts() {
+            try {
+                const res = await fetch('/api/admin/products');
+                allProducts = await res.json();
+                renderProducts(allProducts);
+            } catch (e) { console.error('Erro prods:', e); }
+        }
+
+        function renderProducts(list) {
+            const tbody = document.getElementById('products-tbody');
+            tbody.innerHTML = list.map(p => `
+                <tr>
+                    <td><img src="${p.image_url || 'https://via.placeholder.com/150'}" class="prod-img-table"></td>
+                    <td style="font-weight: 700; color: #fff;">${p.name}</td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">${p.category}</td>
+                    <td style="font-weight: 800; color: var(--yellow); font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;">R$ ${parseFloat(p.price).toFixed(2).replace('.', ',')}</td>
+                    <td>
+                        <span style="font-size: 0.75rem; color: ${p.is_active ? '#10b981' : '#ef4444'}; font-weight: 800; letter-spacing: 1px;">
+                            ${p.is_active ? '● ATIVO' : '● INATIVO'}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <button class="btn-move" style="font-size: 0.8rem; padding: 6px 12px;" onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})'>⚙️ EDITAR</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterProducts() {
+            const term = document.getElementById('product-search').value.toLowerCase();
+            const filtered = allProducts.filter(p =>
+                p.name.toLowerCase().includes(term) ||
+                p.category.toLowerCase().includes(term)
+            );
+            renderProducts(filtered);
+        }
+
+        let allProducts = []; // Para busca local no edit
+
+        async function openProductModal(prod = null) {
+            const modal = document.getElementById('productModal');
+            const title = document.getElementById('productModalTitle');
+            const btnDel = document.getElementById('btn-delete-prod');
+
+            document.getElementById('productForm').reset();
+            document.getElementById('prod-id').value = '';
+
+            if (prod) {
+                title.innerHTML = `EDITAR <span class="highlight">PRODUTO</span>`;
+                document.getElementById('prod-id').value = prod.id;
+                document.getElementById('prod-name').value = prod.name;
+                document.getElementById('prod-category').value = prod.category;
+                document.getElementById('prod-description').value = prod.description;
+                document.getElementById('prod-price').value = prod.price;
+                document.getElementById('prod-image').value = prod.image_url;
+                document.getElementById('prod-status').value = prod.is_active.toString();
+                btnDel.style.display = 'block';
+            } else {
+                title.innerHTML = `NOVO <span class="highlight">PRODUTO</span>`;
+                btnDel.style.display = 'none';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const data = {
+                name: document.getElementById('prod-name').value,
+                category: document.getElementById('prod-category').value,
+                description: document.getElementById('prod-description').value,
+                price: parseFloat(document.getElementById('prod-price').value),
+                image_url: document.getElementById('prod-image').value,
+                is_active: document.getElementById('prod-status').value === 'true'
+            };
+
+            const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    closeProductModal();
+                    fetchProducts();
+                } else {
+                    alert('Erro ao salvar produto');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteProduct() {
+            const id = document.getElementById('prod-id').value;
+            if (!id || !confirm('Tem certeza que deseja excluir este produto?')) return;
+
+            try {
+                const res = await fetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    closeProductModal();
+                    fetchProducts();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function fetchSettings() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                const settings = await res.json();
+                if (settings.store_status) {
+                    document.getElementById('config-status').value = settings.store_status;
+                    updateStoreStatusUI(settings.store_status);
+                }
+                if (settings.delivery_time) document.getElementById('config-time').value = settings.delivery_time;
+                if (settings.operation_hours) document.getElementById('config-hours').value = settings.operation_hours;
+                if (settings.mp_access_token) document.getElementById('config-mp-token').value = settings.mp_access_token;
+            } catch (e) { console.error('Erro settings:', e); }
+        }
+
+        async function saveSettings() {
+            const status = document.getElementById('config-status').value;
+            const time = document.getElementById('config-time').value;
+            const hours = document.getElementById('config-hours').value;
+
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'store_status', value: status })
+            });
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'delivery_time', value: time })
+            });
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'operation_hours', value: hours })
+            });
+
+            showToast("Configurações salvas com sucesso!", "success");
+        }
+
+        async function saveMPSettings() {
+            const token = document.getElementById('config-mp-token').value;
+
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: 'mp_access_token', value: token })
+            });
+
+            if (res.ok) {
+                showToast("Token do Mercado Pago salvo!", "success");
+            } else {
+                showToast("Erro ao salvar token.", "error");
+            }
+        }
+
+        function renderBoard() {
+            const statuses = ['pendente', 'em_preparo', 'saiu_entrega', 'entregue'];
+            let revenue = 0;
+            let count = 0;
+
+            statuses.forEach(status => {
+                const list = document.getElementById(`list-${status}`);
+                const counter = document.getElementById(`count-${status}`);
+                const filtered = orders.filter(o => o.status === status);
+
+                list.innerHTML = '';
+                filtered.forEach(order => {
+                    list.appendChild(createOrderCard(order));
+                    if (status === 'entregue') {
+                        revenue += parseFloat(order.total);
+                    }
+                    if (status !== 'cancelado') count++;
+                });
+
+                counter.innerText = filtered.length;
+            });
+
+            document.getElementById('today-revenue').innerText = `R$ ${revenue.toFixed(2).replace('.', ',')}`;
+            document.getElementById('today-count').innerText = orders.length;
+        }
+
+        function createOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'admin-order-card';
+
+            const time = new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const paymentStatus = (order.payment_status || 'pendente').toLowerCase();
+            const paymentClass = paymentStatus === 'pago' ? 'payment-pago' : 'payment-pendente';
+            const paymentLabel = paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE';
+
+            card.innerHTML = `
+                <div class="card-top">
+                    <span class="order-id">#${order.id}</span>
+                    <span class="order-time">${time}</span>
+                </div>
+                <div class="customer-name">${order.customer_name}</div>
+                <div class="customer-phone">📞 ${order.customer_phone}</div>
+                <div class="payment-badge ${paymentClass}">
+                    PAGAMENTO: ${paymentLabel}
+                </div>
+                <div class="order-items-box">${order.items}</div>
+                <div class="order-address">
+                    <span>📍</span>
+                    <span>${order.delivery_address || 'Retirada no Local'}</span>
+                </div>
+                <div class="card-footer">
+                    <span class="order-price" style="color: var(--yellow);">R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}</span>
+                    <div style="display: flex; gap: 8px;">
+                        ${getMoveButton(order)}
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        function notifyWhatsApp(orderId, phone, status) {
+            // Limpar o telefone (remover caracteres não numéricos)
+            const cleanPhone = phone.replace(/\D/g, '');
+            let message = "";
+
+            const templates = {
+                'pendente': `Olá! Recebemos seu pedido #${orderId} na * Santa Ressaca * ! 🥃 Aguarde um momento enquanto validamos tudo.`,
+                'em_preparo': `Ótimas notícias! Seu pedido #${orderId} já está sendo preparado pela nossa equipe. 👨‍🍳🔥`,
+                'saiu_entrega': `A Santa Ressaca está chegando! 🛵💨 Seu pedido #${orderId} acabou de sair para entrega.`,
+                'entregue': `Pedido #${orderId} entregue! ✅ Aproveite sua ressurreição e não esqueça de nos marcar! 🥂✨`,
+                'cancelado': `Infelizmente seu pedido #${orderId} foi cancelado. 🛑 Entre em contato se precisar de ajuda.`
+            };
+
+            message = templates[status] || templates['pendente'];
+            const url = `https://api.whatsapp.com/send?phone=55${cleanPhone}&text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        }
+
+        function getMoveButton(order) {
+            if (order.status === 'pendente')
+                return `
+                    <button class="btn-move" onclick="updateStatus(${order.id}, 'em_preparo')">PREPARAR</button>
+                    <button class="btn-action-small" onclick="updateStatus(${order.id}, 'cancelado')">✕</button>
+                `;
+            if (order.status === 'em_preparo')
+                return `
+                    <button class="btn-move" onclick="updateStatus(${order.id}, 'saiu_entrega')">ENVIAR</button>
+                `;
+            if (order.status === 'saiu_entrega')
+                return `
+                    <button class="btn-move" onclick="updateStatus(${order.id}, 'entregue')">ENTREGAR</button>
+                `;
+            return '';
+        }
+
+        let pendingDeliveryOrderId = null;
+        function openDeliveryModal(orderId) {
+            pendingDeliveryOrderId = orderId;
+            const select = document.getElementById('delivery-user-select');
+            select.innerHTML = '<option value="">Selecione o Entregador</option>' +
+                deliveryUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+            document.getElementById('modal-delivery-assignment').style.display = 'flex';
+        }
+
+        function closeDeliveryModal() {
+            document.getElementById('modal-delivery-assignment').style.display = 'none';
+        }
+
+        function confirmAssignment() {
+            const deliveryUserId = document.getElementById('delivery-user-select').value;
+            if (!deliveryUserId) {
+                alert('Por favor, selecione um entregador.');
+                return;
+            }
+            updateStatus(pendingDeliveryOrderId, 'saiu_entrega', deliveryUserId);
+            closeDeliveryModal();
+        }
+
+        function switchView(viewId, btn) {
+            // Update Sidebar
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update Views
+            document.querySelectorAll('.dashboard-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${viewId}`).classList.add('active');
+        }
+
+        async function updateStatus(id, status, delivery_user_id = null) {
+            console.log(`[Dashboard] Tentando atualizar pedido #${id} para: ${status}`);
+
+            try {
+                const res = await fetch(`/api/admin/orders/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status, delivery_user_id })
+                });
+
+                if (res.ok) {
+                    const updated = await res.json();
+                    console.log('[Dashboard] Pedido atualizado com sucesso:', updated);
+                    const idx = orders.findIndex(o => o.id === updated.id);
+                    if (idx !== -1) {
+                        orders[idx] = updated;
+                        renderBoard();
+                    }
+                } else {
+                    if (res.status === 401) {
+                        showToast("Sessão expirada. Recarregue a página.", "error");
+                        window.location.href = '/admin-login.html';
+                        return;
+                    }
+                    const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido no servidor' }));
+                    console.error('[Dashboard] Erro na requisição:', errorData);
+                    showToast(errorData.error || "Erro ao atualizar pedido.", "error");
+                }
+            } catch (err) {
+                console.error('[Dashboard] Erro Crítico:', err);
+                showToast("Erro de conexão com o servidor.", "error");
+            }
+        }
+
+        socket.on('novo_pedido', (order) => {
+            orders.unshift(order);
+            renderBoard();
+            notifSound.play().catch(() => { });
+        });
+
+        socket.on('pedido_atualizado', (order) => {
+            const idx = orders.findIndex(o => o.id === order.id);
+            if (idx !== -1) {
+                orders[idx] = order;
+                renderBoard();
+            }
+        });
+
+        // WHATSAPP SOCKETS
+        socket.on('whatsapp_qr', (qr) => {
+            console.log('[Dashboard] QR Code recebido');
+            const qrContainer = document.getElementById('qr-container');
+            const canvas = document.getElementById('qr-canvas');
+            const instruction = document.getElementById('wa-instruction');
+            const badge = document.getElementById('wa-status-badge');
+            const dot = document.getElementById('wa-status-dot');
+            const actions = document.getElementById('wa-actions');
+
+            qrContainer.style.display = 'block';
+            actions.style.display = 'none'; // Esconde botões enquanto aguarda QR
+            badge.innerText = 'AGUARDANDO LEITURA';
+            badge.style.color = '#f39c12';
+            dot.className = 'wa-status-circle disconnected';
+            instruction.innerText = 'Escaneie o código com seu WhatsApp para conectar.';
+
+            QRCode.toCanvas(canvas, qr, { width: 250 }, (error) => {
+                if (error) console.error(error);
+            });
+        });
+
+        socket.on('whatsapp_status', (status) => {
+            console.log('[Dashboard] Status WhatsApp:', status);
+            const badge = document.getElementById('wa-status-badge');
+            const instruction = document.getElementById('wa-instruction');
+            const qrContainer = document.getElementById('qr-container');
+            const dot = document.getElementById('wa-status-dot');
+            const actions = document.getElementById('wa-actions');
+
+            if (status === 'CONNECTED') {
+                badge.innerText = 'CONECTADO';
+                badge.style.color = '#2ecc71';
+                dot.className = 'wa-status-circle connected';
+                instruction.innerText = 'Seu WhatsApp está pronto para enviar notificações.';
+                qrContainer.style.display = 'none';
+                actions.style.display = 'flex'; // Mostra botões quando conectado
+            } else if (status === 'DISCONNECTED') {
+                badge.innerText = 'DESCONECTADO';
+                badge.style.color = '#e74c3c';
+                dot.className = 'wa-status-circle disconnected';
+                instruction.innerText = 'Aguardando o servidor gerar o QR Code...';
+                qrContainer.style.display = 'none'; // Não mostra nada até ter o que mostrar
+                actions.style.display = 'none'; // Esconde botões ao desconectar
+            } else {
+                badge.innerText = status;
+                badge.style.color = '#666';
+                dot.className = 'wa-status-circle disconnected';
+                qrContainer.style.display = 'none';
+                actions.style.display = 'none';
+            }
+        });
+
+        async function logoutWhatsApp() {
+            if (!confirm("Deseja realmente desconectar o WhatsApp do site? Isso impedirá o envio de notificações.")) return;
+            try {
+                const res = await fetch('/api/admin/whatsapp/logout', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message, "success");
+                } else {
+                    showToast(data.error, "error");
+                }
+            } catch (e) {
+                showToast("Erro ao tentar desconectar.", "error");
+            }
+        }
+
+        // PREMIUM TOAST SYSTEM
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const icons = { 'success': '✅', 'error': '❌', 'warning': '⚠️', 'info': 'ℹ️' };
+
+            toast.className = `toast ${type}-premium`;
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || '🔔'}</div>
+                <div class="toast-content"><div class="toast-msg">${message}</div></div>
+                <div class="toast-progress"></div>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('toast-outro');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 4500);
+        }
+
+        // CHAT ADMIN FUNCTIONS
+        async function openOrderChat(id, name) {
+            const modal = document.getElementById('adminChatModal');
+            const chatBox = document.getElementById('admin-chat-messages');
+
+            document.getElementById('admin-chat-order-id').innerText = id;
+            document.getElementById('admin-chat-customer-name').innerText = name;
+            document.getElementById('chat-indicator-' + id).style.display = 'none';
+
+            chatBox.innerHTML = '<p style="color: #555; text-align: center;">Carregando...</p>';
+            modal.style.display = 'flex';
+
+            loadAdminChatMessages(id);
+        }
+
+        function closeAdminChatModal() {
+            document.getElementById('adminChatModal').style.display = 'none';
+        }
+
+        async function loadAdminChatMessages(orderId) {
+            try {
+                const res = await fetch(`/api/admin/orders/${orderId}/messages`);
+                const messages = await res.json();
+                const chatBox = document.getElementById('admin-chat-messages');
+
+                chatBox.innerHTML = messages.length === 0 ?
+                    '<p style="color: #555; text-align: center;">Nenhuma mensagem ainda.</p>' : '';
+
+                messages.forEach(msg => {
+                    appendAdminChatBubble(msg.sender_role, msg.message);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) { console.error(e); }
+        }
+
+        function appendAdminChatBubble(role, text) {
+            const chatBox = document.getElementById('admin-chat-messages');
+            const emptyMsg = chatBox.querySelector('p[style*="text-align: center"]');
+            if (emptyMsg) emptyMsg.remove();
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble-admin bubble-${role}`;
+            bubble.innerText = text;
+            chatBox.appendChild(bubble);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendAdminChat(e) {
+            e.preventDefault();
+            const id = document.getElementById('admin-chat-order-id').innerText;
+            const input = document.getElementById('admin-chat-input');
+            const msg = input.value.trim();
+            if (!msg || id === '---') return;
+
+            try {
+                const res = await fetch(`/api/admin/orders/${id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender_role: 'admin', message: msg })
+                });
+                if (res.ok) {
+                    input.value = '';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Socket listener para chat
+        socket.on('novo_chat_msg', (data) => {
+            const modal = document.getElementById('adminChatModal');
+            const currentChatId = document.getElementById('admin-chat-order-id').innerText;
+
+            if (modal.style.display === 'flex' && data.order_id == currentChatId) {
+                appendAdminChatBubble(data.sender_role, data.message);
+            } else if (data.sender_role === 'customer') {
+                // Mostra indicador no card
+                const indicator = document.getElementById('chat-indicator-' + data.order_id);
+                if (indicator) indicator.style.display = 'block';
+            }
+        });
+
+        init();
+        // --- LOGICA CHAT INTEGRADO ---
+        let currentChatOrderId = null;
+        let unreadCount = 0;
+
+        function toggleChat() {
+            const panel = document.getElementById('chat-panel');
+            const isVisible = panel.style.display === 'flex';
+            panel.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) {
+                unreadCount = 0;
+                updateChatBadge();
+                updateOrderSelector();
+            }
+        }
+
+        function updateChatBadge() {
+            const badge = document.getElementById('chat-badge');
+            badge.innerText = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+
+        function updateOrderSelector() {
+            const select = document.getElementById('chat-order-select');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">Selecione um pedido...</option>';
+
+            // Mostra os 15 pedidos mais recentes
+            const activeOrders = orders.slice(0, 15);
+            activeOrders.forEach(o => {
+                const opt = document.createElement('option');
+                opt.value = o.id;
+                opt.innerText = `#${o.id} - ${o.customer_name} (${o.status})`;
+                select.appendChild(opt);
+            });
+            select.value = currentVal;
+        }
+
+        async function loadSelectedOrderChat() {
+            const select = document.getElementById('chat-order-select');
+            currentChatOrderId = select.value;
+            const container = document.getElementById('chat-messages-container');
+
+            if (!currentChatOrderId) {
+                container.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">Selecione um pedido acima para ver as mensagens</div>';
+                return;
+            }
+
+            container.innerHTML = '<div style="text-align:center; color:#666;">Carregando...</div>';
+
+            try {
+                const res = await fetch(`/api/admin/orders/${currentChatOrderId}/messages`);
+                const messages = await res.json();
+                renderChatMessages(messages);
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center; color:red;">Erro ao carregar mensagens.</div>';
+            }
+        }
+
+        function renderChatMessages(messages) {
+            const container = document.getElementById('chat-messages-container');
+            container.innerHTML = '';
+            messages.forEach(m => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `chat-message ${m.sender_role}`;
+                msgDiv.innerText = m.message;
+                container.appendChild(msgDiv);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg || !currentChatOrderId) return;
+
+            try {
+                const res = await fetch(`/api/admin/orders/${currentChatOrderId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender_role: 'admin', message: msg })
+                });
+
+                if (res.ok) {
+                    input.value = '';
+                    loadSelectedOrderChat();
+                }
+            } catch (e) {
+                console.error('Erro ao enviar mensagem:', e);
+            }
+        }
+
+        socket.on('novo_chat_msg', (data) => {
+            if (data.order_id == currentChatOrderId) {
+                loadSelectedOrderChat();
+            } else {
+                unreadCount++;
+                updateChatBadge();
+            }
+        });
+
+        // Auto-refresh do selector se novos pedidos chegarem
+        socket.on('novo_pedido', (order) => {
+            if (document.getElementById('chat-panel').style.display === 'flex') {
+                updateOrderSelector();
+            }
+        });
+    </script>
+</body>
+
+</html>

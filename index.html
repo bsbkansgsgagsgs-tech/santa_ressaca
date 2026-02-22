@@ -30,9 +30,204 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;800&display=swap"
         rel="stylesheet">
+    <style>
+        /* CHAT INTERNAL CUSTOMER */
+        .chat-container {
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            background: #050505;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #222;
+        }
+
+        .chat-bubble {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .chat-bubble.customer {
+            align-self: flex-end;
+            background: var(--yellow);
+            color: #000;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-bubble.admin {
+            align-self: flex-start;
+            background: #222;
+            color: #fff;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background: #111;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* PREMIUM TOASTS */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 11000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .toast {
+            min-width: 300px;
+            background: rgba(10, 10, 10, 0.95);
+            border-left: 5px solid var(--yellow);
+            color: #fff;
+            padding: 18px 25px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            animation: toastSlideIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .success-premium {
+            border-left-color: #2ecc71;
+        }
+
+        .error-premium {
+            border-left-color: #e74c3c;
+        }
+
+        .warning-premium {
+            border-left-color: #f1c40f;
+        }
+
+        .toast-icon {
+            font-size: 1.4rem;
+        }
+
+        .toast-msg {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 100%;
+            animation: toastProgress 4.5s linear forwards;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+
+            to {
+                width: 0%;
+            }
+        }
+
+        .toast-outro {
+            animation: toastSlideOut 0.5s forwards !important;
+        }
+
+        /* AGGRESSIVE PREMIUM MODAL */
+        .aggressive-modal {
+            background: #0a0a0a !important;
+            border: 2px solid #222 !important;
+            box-shadow: 0 0 50px rgba(241, 196, 15, 0.1) !important;
+            border-radius: 20px !important;
+        }
+    </style>
 </head>
 
 <body>
+    <!-- TOAST NOTIFICATIONS container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- MODAL LOJA FECHADA (PREMIUM) -->
+    <div id="closed-modal" class="modal"
+        style="display: none; align-items: center; justify-content: center; z-index: 10001;">
+        <div class="modal-content aggressive-modal" style="max-width: 450px; text-align: center; padding: 40px;">
+            <div style="font-size: 4rem; margin-bottom: 20px;">🛑</div>
+            <h2 style="font-family: 'Bebas Neue'; font-size: 2.5rem; color: var(--yellow); margin-bottom: 15px;">ESTAMOS
+                FECHADOS</h2>
+            <p style="color: #aaa; font-size: 1.1rem; margin-bottom: 25px;">No momento não estamos aceitando pedidos.
+                Confira nossos horários de atendimento:</p>
+
+            <div
+                style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid #333; margin-bottom: 30px;">
+                <p style="font-weight: 800; color: white; margin-bottom: 5px;">NOSSO HORÁRIO</p>
+                <p id="display-operation-hours"
+                    style="font-size: 1.3rem; color: var(--yellow); font-weight: 900; text-transform: uppercase;">
+                    CONSULTE NOSSAS REDES</p>
+                <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+                    <p style="font-size: 0.8rem; color: #666;">ENTREGA RÁPIDA & QUALIDADE</p>
+                </div>
+            </div>
+
+            <button class="btn-primary aggressive"
+                onclick="document.getElementById('closed-modal').style.display='none'"
+                style="width: 100%;">ENTENDI</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
 
     <!-- LOADER -->
     <div class="loader-wrapper">
@@ -60,6 +255,11 @@
                     <li><a href="#mercado">Conveniência</a></li>
                     <li><a href="#sobre">Sobre</a></li>
                     <li><a href="#contato">Contato</a></li>
+                    <li id="auth-nav-item"><a href="javascript:void(0)" onclick="openAuthModal('login')"
+                            class="btn-auth-nav">Minha Conta</a></li>
+                    <li id="user-nav-item" style="display: none;"><a href="javascript:void(0)"
+                            onclick="openProfileModal()" class="btn-auth-nav"><span class="highlight">Perfil:</span>
+                            <span id="user-display-name"></span></a></li>
                 </ul>
             </nav>
         </div>
@@ -86,48 +286,8 @@
                 <div class="section-badge">Ofertas Exclusivas</div>
                 <h2 class="section-title">Nossos <span class="highlight">Combos</span></h2>
 
-                <div class="product-grid">
-                    <!-- COMBO SEXTÔU INSANO -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/combo_sextou.png" alt="COMBO SEXTÔU INSANO">
-                        </div>
-                        <div class="product-info">
-                            <h3>💣 COMBO SEXTÔU INSANO</h3>
-                            <div class="combo-items">
-                                <p>• 1x Black Label</p>
-                                <p>• 2x Red Bull</p>
-                                <p>• 1x Saco de Gelo 5kg</p>
-                                <p>• 1x Cerveja Skin (Fardo)</p>
-                            </div>
-                            <span class="price">R$ 179,90</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('COMBO SEXTÔU INSANO', 179.90, '✅ 1x Black Label\\n✅ 2x Red Bull\\n✅ 1x Gelo 5kg\\n✅ 1x Cerveja Skin (Fardo)')">
-                                Pedir Combo
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- COMBO CHURRAS GARANTIDO -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/COMBO CHURRAS GARANTIDO.png" alt="COMBO CHURRAS GARANTIDO">
-                        </div>
-                        <div class="product-info">
-                            <h3>🔥 COMBO CHURRAS GARANTIDO</h3>
-                            <div class="combo-items">
-                                <p>• 1x Carvão 5kg</p>
-                                <p>• 1x Sal Grosso</p>
-                                <p>• 12x Cervejas</p>
-                                <p>• 1x Refri 2L</p>
-                            </div>
-                            <span class="price">R$ 109,90</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('COMBO CHURRAS GARANTIDO', 109.90, '✅ 1x Carvão 5kg\\n✅ 1x Sal Grosso\\n✅ 12x Cervejas\\n✅ 1x Refri 2L')">
-                                Pedir Combo
-                            </button>
-                        </div>
-                    </div>
+                <div class="product-grid" id="grid-combos">
+                    <!-- Dinâmico -->
                 </div>
             </div>
         </section>
@@ -137,64 +297,8 @@
             <div class="container">
                 <div class="section-badge">Bebidas Premium</div>
                 <h2 class="section-title">Adega <span class="highlight">Bebidas</span></h2>
-                <div class="product-grid">
-                    <!-- Produto 1 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/Black-Label.jpg" alt="Black Label">
-                        </div>
-                        <div class="product-info">
-                            <h3>Black-Label</h3>
-                            <p>Gelada no ponto certo.</p>
-                            <span class="price">R$ 150,00</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Black Label', 150, '🥃 Gelada no ponto certo.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
-                    <!-- Produto 2 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/corona.jpg" alt="Cerveja Corona">
-                        </div>
-                        <div class="product-info">
-                            <h3>Cerveja Corona</h3>
-                            <p>A refrescância que você conhece.</p>
-                            <span class="price">R$ 7,50</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Cerveja Corona', 7.50, '🍺 A refrescância que você conhece.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
-                    <!-- Produto 3 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/9a15fea3-292e-4a60-b832-2bd31c6aa2c8___df7ea81053e5b15defa5988f576deb03.jpg"
-                                alt="Whisky White Horse">
-                        </div>
-                        <div class="product-info">
-                            <h3>Whisky White Horse</h3>
-                            <p>O clássico Blended Scotch Whisky.</p>
-                            <span class="price">R$ 97,00</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Whisky White Horse', 97, '🥃 O clássico Blended Scotch Whisky.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
-                    <!-- Produto 4 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/maromba.png" alt="Kit Mansão Maromba">
-                        </div>
-                        <div class="product-info">
-                            <h3>Kit Mansão Maromba</h3>
-                            <p>O kit completo para a sua resenha ser épica.</p>
-                            <span class="price">R$ 25,00</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Kit Mansão Maromba', 25, '💪 O kit completo para a sua resenha ser épica.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
+                <div class="product-grid" id="grid-bebidas">
+                    <!-- Dinâmico -->
                 </div>
             </div>
         </section>
@@ -206,50 +310,8 @@
             <div class="container">
                 <div class="section-badge">Mini Mercado</div>
                 <h2 class="section-title">Mercado & <span class="highlight">Conveniência</span></h2>
-                <div class="product-grid">
-                    <!-- Produto 4 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="https://images.unsplash.com/photo-1622483767028-3f66f32aef97?q=80&w=400&auto=format&fit=crop"
-                                alt="Refrigerante">
-                        </div>
-                        <div class="product-info">
-                            <h3>Coca Lata</h3>
-                            <p>Gelada e refrescante.</p>
-                            <span class="price">R$ 6,00</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Coca Lata', 6, '🥤 Gelada e refrescante.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
-                    <!-- Produto 5 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/mix_salgadinhos.png" alt="Petiscos">
-                        </div>
-                        <div class="product-info">
-                            <h3>Mix Salgadinhos</h3>
-                            <p>O acompanhamento perfeito.</p>
-                            <span class="price">R$ 15,90</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Mix Salgadinhos', 15.90, '🍿 O acompanhamento perfeito.')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
-                    <!-- Produto 6 -->
-                    <div class="product-card aggressive-card">
-                        <div class="product-image">
-                            <img src="imagens/gelo.jpg" alt=" Gelo">
-                        </div>
-                        <div class="product-info">
-                            <h3>Saco de Gelo 5kg</h3>
-                            <p>Não deixe esquentar!</p>
-                            <span class="price">R$ 10,00</span>
-                            <button class="btn-card"
-                                onclick="openOrderModal('Saco de Gelo 5kg', 10, '❄️ Não deixe esquentar!')">Pedir
-                                Agora</button>
-                        </div>
-                    </div>
+                <div class="product-grid" id="grid-conveniencia">
+                    <!-- Dinâmico -->
                 </div>
             </div>
         </section>
@@ -378,6 +440,11 @@
                 </div>
 
                 <div class="input-group">
+                    <label>WhatsApp (com DDD)</label>
+                    <input type="tel" id="orderPhone" placeholder="51999999999" required>
+                </div>
+
+                <div class="input-group">
                     <label>Endereço Completo</label>
                     <input type="text" id="address" placeholder="Rua e Número da casa" required>
                 </div>
@@ -388,30 +455,543 @@
                 </div>
 
                 <div class="delivery-total">
-                    <p>Taxa de Entrega: <span id="modalFee">R$ 0,00</span></p>
                     <p class="final-price">Total: <span id="modalTotal">R$ 0,00</span></p>
                 </div>
 
-                <button type="button" class="btn-primary aggressive w-full" onclick="sendOrderToWhatsApp()">Confirmar
+                <button type="button" class="btn-primary aggressive w-full" onclick="sendOrderInternal()">Confirmar
                     Pedido</button>
             </form>
         </div>
     </div>
 
-    <script>
-        // TAB SYSTEM
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabPanes = document.querySelectorAll('.tab-pane');
+    <!-- PROFILE MODAL -->
+    <div id="profileModal" class="modal">
+        <div class="modal-content aggressive-border">
+            <span class="close-btn" onclick="closeProfileModal()">&times;</span>
+            <div class="profile-content">
+                <h2 class="modal-title">MEU <span class="highlight">PERFIL</span></h2>
 
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                tabBtns.forEach(b => b.classList.remove('active'));
-                tabPanes.forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                const tabId = btn.getAttribute('data-tab');
-                document.getElementById(tabId).classList.add('active');
-            });
+                <div class="user-info-card">
+                    <div class="info-item">
+                        <label>Nome Completo</label>
+                        <span id="profile-name">Carregando...</span>
+                    </div>
+                    <div class="info-item">
+                        <label>E-mail</label>
+                        <span id="profile-email">Carregando...</span>
+                    </div>
+                </div>
+
+                <div class="order-history-section">
+                    <h3 class="order-history-title">📦 ÚLTIMOS PEDIDOS</h3>
+                    <div id="order-list" class="order-list">
+                        <p style="color: #666; font-size: 0.9rem;">Você ainda não fez nenhum pedido pelo site.</p>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="btn-secondary" onclick="closeProfileModal()">Fechar</button>
+                    <button class="btn-secondary btn-logout-alt" onclick="logout()">Sair da Conta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal" class="modal">
+        <div class="modal-content aggressive-border">
+            <span class="close-btn" onclick="closeAuthModal()">&times;</span>
+            <div id="login-form-container">
+                <h2 class="modal-title">LOGIN <span class="highlight">SANTA RESSACA</span></h2>
+                <form id="loginForm" class="delivery-form">
+                    <div class="input-group">
+                        <label>E-mail</label>
+                        <input type="email" id="loginEmail" placeholder="seu@email.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <input type="password" id="loginPassword" placeholder="******" required>
+                    </div>
+                    <button type="submit" class="btn-primary aggressive w-full">Entrar</button>
+                    <p class="auth-switch">Não tem conta? <a href="javascript:void(0)"
+                            onclick="openAuthModal('register')">Cadastre-se</a></p>
+                </form>
+            </div>
+
+            <div id="register-form-container" style="display: none;">
+                <h2 class="modal-title">CRIAR <span class="highlight">CONTA</span></h2>
+                <form id="registerForm" class="delivery-form">
+                    <div class="input-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="registerName" required placeholder="Ex: João Silva">
+                    </div>
+                    <div class="input-group">
+                        <label>E-mail</label>
+                        <input type="email" id="registerEmail" required placeholder="seu@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label>WhatsApp (com DDD)</label>
+                        <input type="tel" id="registerPhone" required placeholder="51999999999">
+                    </div>
+                    <div class="input-group">
+                        <label>Senha</label>
+                        <input type="password" id="registerPassword" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-primary aggressive w-full">CADASTRAR</button>
+                </form>
+                <p class="auth-switch" style="margin-top: 20px; font-size: 0.9rem;">Já tem conta? <a
+                        href="javascript:void(0)" onclick="openAuthModal('login')"
+                        style="color: var(--yellow);">Entrar</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS TRACKING MODAL -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content aggressive-border">
+            <span class="close-btn" onclick="closeStatusModal()">&times;</span>
+            <div class="status-tracking-content">
+                <h2 class="modal-title">ACOMPANHAR <span class="highlight">PEDIDO</span></h2>
+                <div class="order-id-badge">Pedido #<span id="track-order-id">---</span></div>
+                <div class="status-stepper">
+                    <div class="step" id="step-pendente">
+                        <div class="step-icon">⏳</div>
+                        <div class="step-label">Pendente</div>
+                    </div>
+                    <div class="step" id="step-em_preparo">
+                        <div class="step-icon">👨‍🍳</div>
+                        <div class="step-label">Em Preparo</div>
+                    </div>
+                    <div class="step" id="step-saiu_entrega">
+                        <div class="step-icon">🛵</div>
+                        <div class="step-label">A Caminho</div>
+                    </div>
+                    <div class="step" id="step-entregue">
+                        <div class="step-icon">✅</div>
+                        <div class="step-label">Entregue</div>
+                    </div>
+                </div>
+
+                <div class="order-summary-box">
+                    <div id="track-items-list" class="track-items"></div>
+                    <div class="track-total">Total: <span id="track-total-value"></span></div>
+                </div>
+
+                <p class="status-tip">Não feche esta página para acompanhar em tempo real!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL STATE
+        let currentUser = null;
+        let isStoreOpen = true;
+        let operationHours = '';
+        let activeOrderId = null;
+        const socket = io();
+
+        // Socket Events
+        socket.on('pedido_atualizado', (order) => {
+            if (activeOrderId && order.id === activeOrderId) {
+                updateStatusUI(order.status);
+
+                // Atualiza visibilidade do código
+                const codeBadge = document.getElementById('delivery-code-badge');
+                if (order.status === 'saiu_entrega' && order.delivery_code) {
+                    codeBadge.style.display = 'block';
+                    document.getElementById('track-delivery-code').innerText = order.delivery_code;
+                } else {
+                    codeBadge.style.display = 'none';
+                }
+
+                showToast(`Status do pedido #${order.id} atualizado: ${order.status.replace('_', ' ')}! 🔔`);
+            }
         });
+
+        function updateStatusUI(status) {
+            const steps = ['pendente', 'em_preparo', 'saiu_entrega', 'entregue'];
+            steps.forEach(s => {
+                document.getElementById(`step-${s}`).classList.remove('active', 'completed');
+            });
+
+            const currentIndex = steps.indexOf(status);
+            for (let i = 0; i < currentIndex; i++) {
+                document.getElementById(`step-${steps[i]}`).classList.add('completed');
+            }
+            if (currentIndex !== -1) {
+                document.getElementById(`step-${status}`).classList.add('active');
+            }
+        }
+
+        // PREMIUM TOAST SYSTEM
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            // Estilo Premium
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+
+            toast.className = `toast ${type}-premium`;
+            toast.innerHTML = `
+                <div class="toast-icon">${icons[type] || '🔔'}</div>
+                <div class="toast-content">
+                    <div class="toast-msg">${message}</div>
+                </div>
+                <div class="toast-progress"></div>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto remove
+            setTimeout(() => {
+                toast.classList.add('toast-outro');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 4500);
+        }
+
+        // AUTH SYSTEM
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/me');
+                const data = await response.json();
+                const btnAdmin = document.getElementById('admin-nav-item'); // Assuming this exists
+                const btnProfile = document.getElementById('user-nav-item');
+                const btnLogin = document.getElementById('auth-nav-item');
+
+                if (data.loggedIn) {
+                    currentUser = data.user;
+                    btnLogin.style.display = 'none';
+                    btnProfile.style.display = 'block';
+                    document.getElementById('user-display-name').innerText = data.user.name.split(' ')[0];
+                    if (data.user.is_admin) btnAdmin.style.display = 'block';
+
+                    // Auto-preenche o telefone no modal de pedido se estiver logado
+                    const orderPhoneInput = document.getElementById('orderPhone');
+                    if (orderPhoneInput) orderPhoneInput.value = data.user.phone || '';
+
+                    // Update profile modal
+                    document.getElementById('profile-name').innerText = data.user.name;
+                    document.getElementById('profile-email').innerText = data.user.email || 'Não informado';
+                    return true;
+                } else {
+                    currentUser = null;
+                    btnLogin.style.display = 'block';
+                    btnProfile.style.display = 'none';
+                    if (btnAdmin) btnAdmin.style.display = 'none'; // Hide admin button if not logged in
+                    return false;
+                }
+            } catch (error) {
+                console.error('Erro ao verificar autenticação:', error);
+            }
+        }
+
+        async function fetchInitialSettings() {
+            try {
+                const res = await fetch('/api/admin/settings');
+                const settings = await res.json();
+                if (settings.operation_hours) {
+                    operationHours = settings.operation_hours;
+                    document.getElementById('display-operation-hours').innerText = operationHours;
+                }
+                if (settings.store_status) {
+                    updateStoreUI(settings.store_status);
+                }
+            } catch (e) { console.error('Erro ao buscar settings iniciais:', e); }
+        }
+
+        function updateStoreUI(status) {
+            isStoreOpen = (status === 'aberta');
+            console.log(`[Loja] Status atual: ${status}`);
+
+            // Atualiza todos os botões de compra (mais o label se fechado)
+            document.querySelectorAll('.btn-card').forEach(btn => {
+                const card = btn.closest('.product-card');
+                const isCombo = card && card.querySelector('.combo-items');
+
+                if (!isStoreOpen) {
+                    btn.classList.add('disabled-btn');
+                    btn.innerText = 'FECHADO';
+                    btn.style.opacity = '0.7';
+                } else {
+                    btn.classList.remove('disabled-btn');
+                    btn.innerText = isCombo ? 'Pedir Combo' : 'Pedir Agora';
+                    btn.style.opacity = '1';
+                }
+            });
+        }
+
+        socket.on('store_status_changed', (status) => {
+            updateStoreUI(status);
+            if (status === 'fechada') {
+                showToast('A loja acabou de fechar! 🛑', 'warning');
+                closeOrderModal();
+            } else {
+                showToast('A loja está aberta! 🎉 Boas compras.', 'success');
+            }
+        });
+
+        socket.on('operation_hours_changed', (hours) => {
+            operationHours = hours;
+            document.getElementById('display-operation-hours').innerText = hours;
+            showToast('Horário de funcionamento atualizado! 🕒', 'info');
+        });
+
+        function openProfileModal() {
+            document.getElementById('profileModal').style.display = 'flex';
+            loadOrders(); // Carrega os pedidos do cliente
+        }
+
+        function openStatusModal(order) {
+            activeOrderId = order.id;
+            document.getElementById('track-order-id').innerText = order.id;
+            document.getElementById('track-total-value').innerText = `R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}`;
+            document.getElementById('track-items-list').innerText = order.items;
+
+            updateStatusUI(order.status);
+            loadChatMessages(order.id);
+            document.getElementById('statusModal').style.display = 'flex';
+        }
+
+        async function loadChatMessages(orderId) {
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML = '<p style="color: #555; font-size: 0.75rem; text-align: center;">Carregando mensagens...</p>';
+
+            try {
+                const res = await fetch(`/api/orders/${orderId}/messages`);
+                const messages = await res.json();
+
+                chatBox.innerHTML = messages.length === 0 ?
+                    '<p style="color: #555; font-size: 0.75rem; text-align: center;">Inicie uma conversa se precisar de ajuda com seu pedido.</p>' : '';
+
+                messages.forEach(msg => {
+                    appendChatBubble(msg.sender_role, msg.message);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (e) { console.error(e); }
+        }
+
+        function appendChatBubble(role, text) {
+            const chatBox = document.getElementById('chat-messages');
+            const welcomeMsg = chatBox.querySelector('p[style*="text-align: center"]');
+            if (welcomeMsg) welcomeMsg.remove();
+
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble ${role}`;
+            bubble.innerText = text;
+            chatBox.appendChild(bubble);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg || !activeOrderId) return;
+
+            try {
+                const res = await fetch(`/api/orders/${activeOrderId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender_role: 'customer', message: msg })
+                });
+                if (res.ok) {
+                    input.value = '';
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Listen for socket chat messages
+        socket.on('novo_chat_msg', (data) => {
+            if (activeOrderId && data.order_id == activeOrderId) {
+                appendChatBubble(data.sender_role, data.message);
+                if (data.sender_role === 'admin') {
+                    showToast('Nova mensagem da loja! 📨');
+                }
+            }
+        });
+
+        function closeStatusModal() {
+            document.getElementById('statusModal').style.display = 'none';
+        }
+
+        async function loadOrders() {
+            const list = document.getElementById('order-list');
+            try {
+                const response = await fetch('/api/orders');
+                const orders = await response.json();
+
+                if (orders && orders.length > 0) {
+                    list.innerHTML = orders.map(order => {
+                        const date = new Date(order.created_at).toLocaleDateString('pt-BR');
+                        return `
+                            <div class="order-item" onclick="openStatusModal(${JSON.stringify(order).replace(/"/g, '&quot;')})">
+                                <div>
+                                    <div class="order-name">${order.items.split('\n')[0]}</div>
+                                    <div class="order-date">${date}</div>
+                                </div>
+                                <div class="order-price">R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    list.innerHTML = '<p style="color: #666; font-size: 0.9rem;">Você ainda não fez nenhum pedido pelo site.</p>';
+                }
+            } catch (err) {
+                console.error('Erro ao carregar pedidos', err);
+            }
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function openAuthModal(type) {
+            document.getElementById('authModal').style.display = 'flex';
+            if (type === 'login') {
+                document.getElementById('login-form-container').style.display = 'block';
+                document.getElementById('register-form-container').style.display = 'none';
+            } else {
+                document.getElementById('login-form-container').style.display = 'none';
+                document.getElementById('register-form-container').style.display = 'block';
+            }
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    closeAuthModal();
+                    checkAuth();
+                    showToast('Bem-vindo de volta, ' + (data.user.name.split(' ')[0]) + '! 🥃');
+                } else {
+                    showToast(data.error || 'E-mail ou senha incorretos.', 'error');
+                }
+            } catch (err) {
+                showToast('Erro na conexão com o servidor.', 'error');
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password, phone })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    closeAuthModal();
+                    checkAuth();
+                    showToast('Conta criada com sucesso! Aproveite. 🚀');
+                } else {
+                    showToast(data.error || 'Erro ao criar conta.', 'error');
+                }
+            } catch (err) {
+                showToast('Erro na conexão com o servidor.', 'error');
+            }
+        });
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'GET' });
+            checkAuth();
+            closeProfileModal();
+            showToast('Você saiu da sua conta. Até logo!');
+        }
+
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+        });
+
+        // Initialize
+        checkAuth();
+        fetchInitialSettings();
+        fetchProducts();
+
+        // Check for payment result in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('payment') === 'success') {
+            const orderId = urlParams.get('orderId');
+            showToast(`Pagamento do pedido #${orderId} aprovado! 🍻`, 'success');
+            // Remove params from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (urlParams.get('payment') === 'failure') {
+            showToast('Ops! O pagamento não foi concluído. Tente novamente.', 'error');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        async function fetchProducts() {
+            try {
+                const res = await fetch('/api/products');
+                const products = await res.json();
+
+                const grids = {
+                    'Combos': document.getElementById('grid-combos'),
+                    'Bebidas': document.getElementById('grid-bebidas'),
+                    'Conveniência': document.getElementById('grid-conveniencia')
+                };
+
+                // Clear grids
+                Object.values(grids).forEach(g => { if (g) g.innerHTML = ''; });
+
+                products.forEach(p => {
+                    const grid = grids[p.category];
+                    if (!grid) return;
+
+                    const card = document.createElement('div');
+                    card.className = 'product-card aggressive-card reveal';
+
+                    const descriptionHtml = p.category === 'Combos'
+                        ? `<div class="combo-items">${p.description.split('\n').map(l => `<p>${l}</p>`).join('')}</div>`
+                        : `<p class="prod-desc">${p.description}</p>`;
+
+                    const btnLabel = p.category === 'Combos' ? 'Pedir Combo' : 'Pedir Agora';
+
+                    card.innerHTML = `
+                        <div class="product-image">
+                            <img src="${p.image_url || 'https://via.placeholder.com/400'}" alt="${p.name}" loading="lazy">
+                        </div>
+                        <div class="product-info">
+                            <h3>${p.name}</h3>
+                            ${descriptionHtml}
+                            <div style="margin-top: auto;">
+                                <span class="price">R$ ${parseFloat(p.price).toFixed(2).replace('.', ',')}</span>
+                                <button class="btn-card" onclick="openOrderModal('${p.name}', ${p.price}, '${p.description.replace(/\n/g, '\\n')}')">
+                                    ${btnLabel}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                console.error('Erro ao carregar produtos:', e);
+            }
+        }
 
         // ORDER SYSTEM
         let currentProduct = {
@@ -421,11 +1001,22 @@
         };
 
         function openOrderModal(name, price, items) {
-            currentProduct = { name, price, items };
+            currentProduct = { name, price, items }; // Set currentProduct first
+
+            if (!isStoreOpen) {
+                document.getElementById('closed-modal').style.display = 'flex';
+                return;
+            }
+            if (!currentUser) {
+                showToast('Faça login para realizar pedidos! 🥃', 'error');
+                openAuthModal('login');
+                return;
+            }
+
             document.getElementById('modalProductName').innerText = name;
             document.getElementById('modalProductPrice').innerText = `R$ ${price.toFixed(2)}`;
             document.getElementById('modalTotal').innerText = `R$ ${price.toFixed(2)}`;
-            document.getElementById('modalFee').innerText = 'R$ 0,00';
+            // Removido display de taxa
             document.getElementById('neighborhood').value = '';
             document.getElementById('address').value = '';
             document.getElementById('complement').value = '';
@@ -441,54 +1032,80 @@
             const fee = parseFloat(select.options[select.selectedIndex].getAttribute('data-fee')) || 0;
             const total = currentProduct.price + fee;
 
-            document.getElementById('modalFee').innerText = `R$ ${fee.toFixed(2)}`;
+            // Só atualiza o total
             document.getElementById('modalTotal').innerText = `R$ ${total.toFixed(2)}`;
         }
 
-        function sendOrderToWhatsApp() {
+        async function sendOrderInternal() {
             const neighborhood = document.getElementById('neighborhood').value;
             const address = document.getElementById('address').value;
             const complement = document.getElementById('complement').value;
-            const fee = parseFloat(document.getElementById('neighborhood').options[document.getElementById('neighborhood').selectedIndex].getAttribute('data-fee')) || 0;
+            const select = document.getElementById('neighborhood');
+            const fee = parseFloat(select.options[select.selectedIndex].getAttribute('data-fee')) || 0;
 
             if (!neighborhood || !address) {
-                alert('Por favor, preencha o endereço de entrega.');
+                showToast('Por favor, preencha o endereço de entrega.', 'error');
                 return;
             }
 
             const total = currentProduct.price + fee;
-            const phone = "555195469856";
+            // Pega o telefone do input (que é preenchido no checkAuth se logado)
+            const phone = document.getElementById('orderPhone').value;
 
-            // Format Title based on whether it is a Combo or regular product
-            const isCombo = currentProduct.name.toLowerCase().includes('combo');
-            const titleEmoji = isCombo ? '🍺' : '🛒';
+            if (!phone) {
+                showToast('Por favor, preencha seu WhatsApp.', 'error');
+                return;
+            }
 
-            let message = `🚀 *NOVO PEDIDO - SANTA RESSACA* 🚀\n\n`;
-            message += `${titleEmoji} *${currentProduct.name.toUpperCase()}* ${titleEmoji}\n\n`;
+            const orderData = {
+                customer_name: currentUser ? currentUser.name : 'Visitante',
+                customer_phone: phone,
+                items: currentProduct.name + '\n' + currentProduct.items,
+                total: total,
+                delivery_address: `${address}, ${neighborhood}` + (complement ? ` - ${complement}` : '')
+            };
 
-            // Fix line breaks if they are coming as literal characters
-            const formattedItems = currentProduct.items.replace(/\\n/g, '\n');
-            message += `${formattedItems}\n\n`;
-            message += `📍 *ENDEREÇO DE ENTREGA* 📍\n`;
-            message += `--------------------------\n`;
-            message += `🏡 *Bairro:* ${neighborhood}\n`;
-            message += `🛣️ *Rua/Nº:* ${address}\n`;
-            if (complement) message += `🏢 *Comp:* ${complement}\n`;
-            message += `\n--------------------------\n`;
-            message += `💰 *Subtotal:* R$ ${currentProduct.price.toFixed(2).replace('.', ',')}\n`;
-            message += `🚚 *Taxa Tele:* R$ ${fee.toFixed(2).replace('.', ',')}\n`;
-            message += `✅ *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*\n\n`;
-            message += `*Pode confirmar meu pedido?*`;
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+                const order = await response.json();
 
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`, '_blank');
-            closeOrderModal();
+                if (response.ok) {
+                    closeOrderModal();
+                    showToast('Pedido registrado! Redirecionando para pagamento... 💳');
+
+                    // Criar preferência do Mercado Pago
+                    const prefRes = await fetch('/api/payments/create-preference', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId: order.id })
+                    });
+
+                    const prefData = await prefRes.json();
+
+                    if (prefRes.ok && prefData.init_point) {
+                        // Redireciona para o Mercado Pago
+                        window.location.href = prefData.init_point;
+                    } else {
+                        showToast('Erro ao gerar link de pagamento. Fale com o suporte no WhatsApp.', 'warning');
+                        openStatusModal(order);
+                    }
+                } else {
+                    showToast(order.error || 'Erro ao realizar pedido.', 'error');
+                }
+            } catch (err) {
+                showToast('Erro na conexão com o servidor.', 'error');
+            }
         }
 
         // Close modal when clicking outside
         window.onclick = function (event) {
-            const modal = document.getElementById('orderModal');
-            if (event.target == modal) closeOrderModal();
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
         }
     </script>
 

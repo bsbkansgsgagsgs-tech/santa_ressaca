@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Santa Ressaca</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .login-card {
+            background: #111;
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--yellow);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            text-align: center;
+        }
+
+        .login-card h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            color: var(--yellow);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
+            padding: 12px;
+            color: #fff;
+            border-radius: 6px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--yellow);
+        }
+
+        .btn-admin {
+            width: 100%;
+            padding: 15px;
+            background: var(--yellow);
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: 800;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-admin:hover {
+            background: #fff;
+            transform: scale(1.02);
+        }
+
+        .error-msg {
+            color: #f44336;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <h1>ADMIN <span class="highlight">LOGIN</span></h1>
+        <form id="adminLoginForm">
+            <div class="input-group">
+                <label>E-mail de Gerenciamento</label>
+                <input type="email" id="email" required placeholder="admin@santaressaca.com">
+            </div>
+            <div class="input-group">
+                <label>Senha de Acesso</label>
+                <input type="password" id="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-admin">Entrar no Painel</button>
+            <div id="errorMsg" class="error-msg">Acesso negado. Credenciais inválidas.</div>
+
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                errorMsg.innerText = 'Erro na conexão com o servidor.';
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+
+</html>
