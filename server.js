@@ -9,6 +9,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const mercadopago = require('mercadopago');
 const db = require('./database');
+const multer = require('multer');
 
 // Token fixo do Mercado Pago
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || 'APP_USR-3473019391747725-022212-815e8b67a8506ee707868980c1ab5575-646084862';
@@ -141,6 +142,32 @@ async function sendWhatsAppMessage(phone, text) {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
+
+// Configuração do Multer para Upload de Imagens
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'imagens/');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, 'prod-' + uniqueSuffix + ext);
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limite de 5MB
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /jpeg|jpg|png|webp/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        if (extname && mimetype) {
+            return cb(null, true);
+        }
+        cb(new Error('Apenas imagens (jpeg, jpg, png, webp) são permitidas!'));
+    }
+});
 
 // Configurações de Sessão
 const sessionConfig = {
@@ -461,6 +488,19 @@ app.delete('/api/admin/products/:id', adminSession, requireAdmin, async (req, re
         await db.deleteProduct(req.params.id);
         res.json({ message: 'Produto excluído.' });
     } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/admin/products/upload', adminSession, requireAdmin, upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+        }
+        const imageUrl = `imagens/${req.file.filename}`;
+        res.json({ imageUrl });
+    } catch (e) {
+        console.error('[Upload] Erro:', e.message);
+        res.status(500).json({ error: 'Erro ao processar upload: ' + e.message });
+    }
 });
 
 app.post('/api/admin/reset-orders', adminSession, requireAdmin, async (req, res) => {

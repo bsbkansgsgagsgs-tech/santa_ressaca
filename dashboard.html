@@ -489,6 +489,63 @@
             outline: none;
         }
 
+        /* Image Preview Styles */
+        .preview-container {
+            width: 100%;
+            height: 180px;
+            background: #111;
+            border: 1px dashed #333;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .preview-container:hover {
+            border-color: var(--yellow);
+        }
+
+        .preview-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        .preview-container.has-image .preview-placeholder {
+            display: none;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--yellow);
+            color: #000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-size: 1.2rem;
+        }
+
         /* SEARCH AREA */
         .search-area {
             display: flex;
@@ -977,8 +1034,25 @@
                     </div>
 
                     <div class="input-group">
-                        <label>URL da Imagem</label>
-                        <input type="text" id="prod-image" placeholder="imagens/foto.png">
+                        <label>Imagem do Produto</label>
+                        <div class="preview-container" id="prod-preview-container"
+                            onclick="document.getElementById('prod-file-input').click()">
+                            <img id="prod-preview-img" src="" style="display: none;">
+                            <div class="preview-placeholder" id="prod-preview-placeholder">
+                                <span style="font-size: 2.5rem;">📸</span>
+                                <b>CLIQUE PARA ADICIONAR FOTO</b>
+                                <span>Suporta câmera do celular ou galeria</span>
+                            </div>
+                            <div class="camera-overlay">
+                                📷
+                            </div>
+                        </div>
+                        <input type="file" id="prod-file-input" accept="image/*" style="display: none;"
+                            onchange="handleImageSelection(event)">
+
+                        <label style="font-size: 0.8rem; color: #555;">OU COLE A URL ABAIXO</label>
+                        <input type="text" id="prod-image" placeholder="imagens/foto.png"
+                            oninput="updatePreviewFromUrl()">
                     </div>
 
                     <div class="input-group">
@@ -1211,9 +1285,25 @@
                 document.getElementById('prod-price').value = prod.price;
                 document.getElementById('prod-image').value = prod.image_url;
                 document.getElementById('prod-status').value = prod.is_active.toString();
+
+                // Atualizar preview
+                if (prod.image_url) {
+                    const previewImg = document.getElementById('prod-preview-img');
+                    const previewPlaceholder = document.getElementById('prod-preview-placeholder');
+                    const previewContainer = document.getElementById('prod-preview-container');
+
+                    previewImg.src = prod.image_url;
+                    previewImg.style.display = 'block';
+                    previewPlaceholder.style.display = 'none';
+                    previewContainer.classList.add('has-image');
+                } else {
+                    resetImagePreview();
+                }
+
                 btnDel.style.display = 'block';
             } else {
                 title.innerHTML = `NOVO <span class="highlight">PRODUTO</span>`;
+                resetImagePreview();
                 btnDel.style.display = 'none';
             }
 
@@ -1226,15 +1316,47 @@
 
         async function saveProduct(e) {
             e.preventDefault();
+            console.log('[Product] Iniciando salvamento...');
+
             const id = document.getElementById('prod-id').value;
+            const fileInput = document.getElementById('prod-file-input');
+            let imageUrl = document.getElementById('prod-image').value;
+
+            // Se houver um arquivo selecionado, faz o upload primeiro
+            if (fileInput.files && fileInput.files[0]) {
+                showToast("Fazendo upload da imagem...", "warning");
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+
+                try {
+                    const uploadRes = await fetch('/api/admin/products/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (uploadRes.ok) {
+                        const uploadData = await uploadRes.json();
+                        imageUrl = uploadData.imageUrl;
+                    } else {
+                        const err = await uploadRes.json();
+                        showToast("Erro no upload: " + (err.error || "Tente novamente"), "error");
+                        return; // Para o salvamento se o upload falhar
+                    }
+                } catch (err) {
+                    showToast("Erro de conexão no upload", "error");
+                    return;
+                }
+            }
+
             const data = {
                 name: document.getElementById('prod-name').value,
                 category: document.getElementById('prod-category').value,
                 description: document.getElementById('prod-description').value,
                 price: parseFloat(document.getElementById('prod-price').value),
-                image_url: document.getElementById('prod-image').value,
+                image_url: imageUrl,
                 is_active: document.getElementById('prod-status').value === 'true'
             };
+
+            console.log('[Product] Dados coletados:', data);
 
             const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
             const method = id ? 'PUT' : 'POST';
@@ -1245,13 +1367,70 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
+
                 if (res.ok) {
+                    const result = await res.json();
+                    console.log('[Product] Sucesso:', result);
+                    showToast(id ? "Produto atualizado!" : "Produto adicionado com sucesso!", "success");
                     closeProductModal();
                     fetchProducts();
                 } else {
-                    alert('Erro ao salvar produto');
+                    const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido no servidor' }));
+                    console.error('[Product] Erro na resposta:', res.status, errorData);
+                    showToast(`Erro: ${errorData.error || 'Não foi possível salvar'}`, "error");
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('[Product] Erro na requisição:', e);
+                showToast("Erro de conexão ao salvar produto", "error");
+            }
+        }
+
+        // Novas funções para gestão de imagens no frontend
+        function handleImageSelection(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const previewImg = document.getElementById('prod-preview-img');
+                    const previewPlaceholder = document.getElementById('prod-preview-placeholder');
+                    const previewContainer = document.getElementById('prod-preview-container');
+
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    previewPlaceholder.style.display = 'none';
+                    previewContainer.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updatePreviewFromUrl() {
+            const url = document.getElementById('prod-image').value;
+            const previewImg = document.getElementById('prod-preview-img');
+            const previewPlaceholder = document.getElementById('prod-preview-placeholder');
+            const previewContainer = document.getElementById('prod-preview-container');
+
+            if (url) {
+                previewImg.src = url;
+                previewImg.style.display = 'block';
+                previewPlaceholder.style.display = 'none';
+                previewContainer.classList.add('has-image');
+            } else {
+                resetImagePreview();
+            }
+        }
+
+        function resetImagePreview() {
+            const previewImg = document.getElementById('prod-preview-img');
+            const previewPlaceholder = document.getElementById('prod-preview-placeholder');
+            const previewContainer = document.getElementById('prod-preview-container');
+            const fileInput = document.getElementById('prod-file-input');
+
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+            previewPlaceholder.style.display = 'flex';
+            previewContainer.classList.remove('has-image');
+            fileInput.value = ''; // Limpa o input de arquivo
         }
 
         async function deleteProduct() {

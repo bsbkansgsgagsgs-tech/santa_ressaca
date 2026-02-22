@@ -95,6 +95,7 @@ const Database = {
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             `;
+            await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`.catch(() => { });
 
             await sql`
                 CREATE TABLE IF NOT EXISTS settings (
@@ -230,8 +231,8 @@ const Database = {
     createProduct: async (p) => {
         const sql = Database.getSql();
         return await sql`
-            INSERT INTO products (name, description, price, category, image_url)
-            VALUES (${p.name}, ${p.description}, ${p.price}, ${p.category}, ${p.image_url})
+            INSERT INTO products (name, description, price, category, image_url, is_active)
+            VALUES (${p.name}, ${p.description}, ${p.price}, ${p.category}, ${p.image_url}, ${p.is_active !== undefined ? p.is_active : true})
             RETURNING *
         `;
     },
