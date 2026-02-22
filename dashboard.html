@@ -815,6 +815,11 @@
 
         @media (max-width: 900px) {
             .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                width: 280px;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease;
                 z-index: 1000;
@@ -826,6 +831,7 @@
 
             .main-content {
                 margin-left: 0;
+                width: 100%;
             }
 
             .mobile-menu-btn {
@@ -841,8 +847,13 @@
                 padding: 0 15px;
             }
 
+            .dashboard-view {
+                padding: 15px;
+            }
+
             .kanban-board {
                 gap: 15px;
+                padding: 15px 10px;
             }
 
             .kanban-column {
@@ -851,20 +862,24 @@
 
             .table-container {
                 overflow-x: auto;
+                background: #0d0d0d;
+                border-radius: 8px;
             }
 
             table {
                 min-width: 600px;
             }
 
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .modal-content {
+                width: 95% !important;
+                max-width: none !important;
+                margin: 20px auto;
+                padding: 15px;
             }
 
-            .modal-content {
-                width: 95%;
-                margin: 20px auto;
-                padding: 20px;
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
         }
 
