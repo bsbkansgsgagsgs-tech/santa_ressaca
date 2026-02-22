@@ -13,7 +13,7 @@ const db = require('./database');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-const PORT = 3005;
+const PORT = process.env.PORT || 3005;
 
 // WhatsApp Client Initialization
 const client = new Client({
