@@ -10,6 +10,10 @@ const qrcode = require('qrcode-terminal');
 const mercadopago = require('mercadopago');
 const db = require('./database');
 
+// Token fixo do Mercado Pago
+const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || 'APP_USR-3473019391747725-022212-815e8b67a8506ee707868980c1ab5575-646084862';
+const MP_PUBLIC_KEY = process.env.MP_PUBLIC_KEY || 'APP_USR-da98d9ea-0994-46c5-8463-e59178129e61';
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -131,6 +135,7 @@ async function sendWhatsAppMessage(phone, text) {
         console.error(`[WhatsApp] 🛑 ERRO Crítico no envio para ${phone}:`, e.message);
     }
 }
+
 
 // Middleware
 app.use(bodyParser.json());
@@ -321,9 +326,12 @@ app.post('/api/orders', customerSession, async (req, res) => {
         }
 
         const order = await db.createOrder(orderData);
+        // Define status inicial como aguardando escolha de pagamento
+        await db.updateOrderStatus(order.id, 'aguardando_pagamento');
+        const updatedOrder = await db.getOrderById(order.id);
 
-        // Emitir evento para o dashboard
-        io.emit('novo_pedido', order);
+        // Emitir evento para o dashboard com o status atualizado
+        io.emit('novo_pedido', updatedOrder);
 
         // Notificação WhatsApp Novo Pedido
         if (order.customer_phone) {
@@ -455,6 +463,14 @@ app.delete('/api/admin/products/:id', adminSession, requireAdmin, async (req, re
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/admin/reset-orders', adminSession, requireAdmin, async (req, res) => {
+    try {
+        await db.resetAllOrders();
+        io.emit('pedidos_resetados'); // Notifica dashboards abertos
+        res.json({ message: 'Todos os pedidos e mensagens foram apagados.' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // PUBLIC API
 app.get('/api/products', customerSession, async (req, res) => {
     try {
@@ -462,6 +478,14 @@ app.get('/api/products', customerSession, async (req, res) => {
         // Filtra apenas os ativos para o público
         res.json(prod.filter(p => p.is_active));
     } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Endpoint público para verificar se o Mercado Pago está configurado
+app.get('/api/payments/status', async (req, res) => {
+    res.json({
+        configured: MP_ACCESS_TOKEN.length > 10,
+        publicKey: MP_PUBLIC_KEY
+    });
 });
 
 app.get('/api/admin/settings', adminSession, requireAdmin, async (req, res) => {
@@ -497,54 +521,170 @@ app.post('/api/admin/whatsapp/logout', adminSession, requireAdmin, async (req, r
     }
 });
 
-// Endpoints de entrega removidos
+// ============================================
+// CHECKOUT PRÓPRIO - MERCADO PAGO PAYMENTS API
+// ============================================
 
-// MERCADO PAGO INTEGRATION
-app.post('/api/payments/create-preference', customerSession, async (req, res) => {
+// Helper para atualizar pagamento e notificar
+async function approvePayment(orderId, paymentId, method = 'online') {
     try {
-        const { orderId } = req.body;
-        console.log(`[MercadoPago] Criando preferência para pedido #${orderId}`);
+        const sql = db.getSql();
+        await sql`UPDATE orders SET payment_status = 'pago', status = 'pendente', mp_payment_id = ${paymentId}, payment_method = ${method} WHERE id = ${orderId}`;
+        const updatedOrder = await db.getOrderById(orderId);
+        io.emit('pedido_atualizado', updatedOrder);
+        if (updatedOrder && updatedOrder.customer_phone) {
+            const summary = `✅ *PAGAMENTO CONFIRMADO!* 🍻\n\n` +
+                `Olá *${updatedOrder.customer_name}*, recebemos seu pagamento!\n\n` +
+                `*DETALHES DO PEDIDO #${orderId}:*\n` +
+                `${updatedOrder.items}\n\n` +
+                `💰 *Total:* R$ ${parseFloat(updatedOrder.total).toFixed(2).replace('.', ',')}\n` +
+                `📍 *Entrega:* ${updatedOrder.delivery_address || 'Retirada no Local'}\n\n` +
+                `Seu pedido já está em preparo e avisaremos quando sair! 🥃🔥`;
+
+            sendWhatsAppMessage(updatedOrder.customer_phone, summary);
+        }
+        return updatedOrder;
+    } catch (e) {
+        console.error('[MP] Erro ao aprovar pagamento:', e.message);
+    }
+}
+
+// PIX - cria pagamento e retorna QR code
+app.post('/api/payments/pix', customerSession, async (req, res) => {
+    try {
+        const { orderId, payerEmail, payerCpf, payerFirstName, payerLastName } = req.body;
+        console.log(`[MP PIX] Iniciando geração para pedido #${orderId}`);
+
         const order = await db.getOrderById(orderId);
-        if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
-
-        const settings = await db.getSettings();
-        const mpToken = settings.mp_access_token;
-
-        if (!mpToken) {
-            console.warn('[MercadoPago] Access Token ausente nas configurações.');
-            return res.status(400).json({ error: 'Mercado Pago não configurado. Fale com o suporte.' });
+        if (!order) {
+            console.error(`[MP PIX] Pedido #${orderId} não encontrado.`);
+            return res.status(404).json({ error: 'Pedido não encontrado.' });
         }
 
-        const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: mpToken });
-        const preference = new mercadopago.Preference(mpClient);
+        // Salva o email no pedido
+        if (payerEmail) {
+            const sql = db.getSql();
+            await sql`UPDATE orders SET customer_email = ${payerEmail} WHERE id = ${orderId}`;
+        }
 
-        const response = await preference.create({
+        console.log(`[MP PIX] Usando Token: ${MP_ACCESS_TOKEN.substring(0, 15)}...`);
+        const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+        const payment = new mercadopago.Payment(mpClient);
+
+        const paymentData = await payment.create({
             body: {
-                items: [
-                    {
-                        id: order.id.toString(),
-                        title: `Pedido #${order.id} - Santa Ressaca`,
-                        unit_price: Number(order.total),
-                        quantity: 1,
-                        currency_id: 'BRL'
-                    }
-                ],
-                back_urls: {
-                    success: `${req.protocol}://${req.get('host')}/index.html?payment=success&orderId=${order.id}`,
-                    failure: `${req.protocol}://${req.get('host')}/index.html?payment=failure&orderId=${order.id}`,
-                    pending: `${req.protocol}://${req.get('host')}/index.html?payment=pending&orderId=${order.id}`
+                transaction_amount: Number(order.total),
+                description: `Pedido #${order.id} - Santa Ressaca`,
+                payment_method_id: 'pix',
+                payer: {
+                    email: payerEmail || 'cliente@santaressaca.com.br',
+                    first_name: payerFirstName || order.customer_name.split(' ')[0],
+                    last_name: payerLastName || (order.customer_name.split(' ')[1] || 'Cliente'),
+                    identification: { type: 'CPF', number: (payerCpf || '00000000000').replace(/\D/g, '') }
                 },
-                auto_return: 'approved',
-                notification_url: `https://${req.get('host')}/api/payments/webhook`,
                 external_reference: order.id.toString()
             }
         });
 
-        console.log(`[MercadoPago] Preferência criada: ${response.id}`);
-        res.json({ id: response.id, init_point: response.init_point });
+        console.log(`[MP PIX] ✅ Pagamento criado: ${paymentData.id} para pedido #${order.id} - Status: ${paymentData.status}`);
+
+        res.json({
+            payment_id: paymentData.id,
+            status: paymentData.status,
+            qr_code: paymentData.point_of_interaction?.transaction_data?.qr_code,
+            qr_code_base64: paymentData.point_of_interaction?.transaction_data?.qr_code_base64,
+            expires_at: paymentData.date_of_expiration
+        });
     } catch (error) {
-        console.error('[MercadoPago] Erro Crítico:', error.message);
-        res.status(500).json({ error: 'Erro ao processar pagamento com Mercado Pago.' });
+        console.error('[MP PIX] 🛑 ERRO FATAL:', error);
+        res.status(500).json({ error: 'Erro ao gerar PIX. Verifique os logs do servidor.' });
+    }
+});
+
+// CARTÃO - recebe token gerado pelo MercadoPago.js no frontend
+app.post('/api/payments/card', customerSession, async (req, res) => {
+    try {
+        const { orderId, token, paymentMethodId, installments, payerEmail, payerCpf, payerFirstName, payerLastName } = req.body;
+        const order = await db.getOrderById(orderId);
+        if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
+
+        // Salva o email no pedido
+        if (payerEmail) {
+            const sql = db.getSql();
+            await sql`UPDATE orders SET customer_email = ${payerEmail} WHERE id = ${orderId}`;
+        }
+
+        console.log(`[MP CARD] Iniciando processamento para pedido #${orderId}`);
+        console.log(`[MP CARD] Token: ${token ? token.substring(0, 10) + '...' : 'NULL'}`);
+        console.log(`[MP CARD] Método: ${paymentMethodId || 'NULL'}`);
+
+        const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+        const payment = new mercadopago.Payment(mpClient);
+
+        const paymentData = await payment.create({
+            body: {
+                transaction_amount: Number(order.total),
+                token,
+                description: `Pedido #${order.id} - Santa Ressaca`,
+                installments: Number(installments) || 1,
+                payment_method_id: paymentMethodId,
+                payer: {
+                    email: payerEmail || 'cliente@santaressaca.com.br',
+                    identification: { type: 'CPF', number: (payerCpf || '00000000000').replace(/\D/g, '') }
+                },
+                external_reference: order.id.toString()
+            }
+        });
+
+        console.log(`[MP CARD] Pagamento ${paymentData.status} para pedido #${order.id}`);
+
+        if (paymentData.status === 'approved') {
+            await approvePayment(order.id, paymentData.id, 'cartao');
+        }
+
+        res.json({
+            payment_id: paymentData.id,
+            status: paymentData.status,
+            status_detail: paymentData.status_detail
+        });
+    } catch (error) {
+        console.error('[MP CARD] Erro:', error.message);
+        res.status(500).json({ error: 'Erro ao processar cartão. Verifique os dados e tente novamente.' });
+    }
+});
+
+// CONSULTA STATUS - para polling do PIX
+app.get('/api/payments/check/:paymentId', customerSession, async (req, res) => {
+    try {
+        const { paymentId } = req.params;
+        const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
+        const payment = new mercadopago.Payment(mpClient);
+        const payData = await payment.get({ id: paymentId });
+
+        if (payData.status === 'approved') {
+            const orderId = payData.external_reference;
+            await approvePayment(orderId, paymentId, 'pix');
+        }
+
+        res.json({ status: payData.status, status_detail: payData.status_detail });
+    } catch (error) {
+        console.error('[MP CHECK] Erro:', error.message);
+        res.status(500).json({ error: 'Erro ao verificar pagamento.' });
+    }
+});
+
+// DINHEIRO - apenas marca o pedido como método dinheiro
+app.post('/api/payments/cash', customerSession, async (req, res) => {
+    try {
+        const { orderId, changeAmount } = req.body;
+        const sql = db.getSql();
+        await sql`UPDATE orders SET payment_method = 'dinheiro', status = 'pendente', change_amount = ${changeAmount || null} WHERE id = ${orderId}`;
+        const order = await db.getOrderById(orderId);
+        io.emit('pedido_atualizado', order);
+        res.json({ success: true, order });
+    } catch (error) {
+        console.error('[CASH] Erro:', error.message);
+        res.status(500).json({ error: 'Erro ao processar pedido.' });
     }
 });
 
@@ -557,23 +697,13 @@ app.post('/api/payments/webhook', async (req, res) => {
 
         if (topic === 'payment') {
             const paymentId = query.id || query['data.id'];
-            const settings = await db.getSettings();
-            const mpToken = settings.mp_access_token;
-            if (!mpToken) return res.sendStatus(400);
-
-            const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: mpToken });
+            const mpClient = new mercadopago.MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN });
             const payment = new mercadopago.Payment(mpClient);
             const payData = await payment.get({ id: paymentId });
             const orderId = payData.external_reference;
 
             if (payData.status === 'approved') {
-                const sql = db.getSql();
-                await sql`UPDATE orders SET payment_status = 'pago' WHERE id = ${orderId}`;
-                const updatedOrder = await db.getOrderById(orderId);
-                io.emit('pedido_atualizado', updatedOrder);
-                if (updatedOrder.customer_phone) {
-                    sendWhatsAppMessage(updatedOrder.customer_phone, `✅ *PAGAMENTO CONFIRMADO!* 🍻\n\nRecebemos seu pagamento (#${orderId}). Seu pedido está em preparo!`);
-                }
+                await approvePayment(orderId, paymentId, payData.payment_method_id || 'online');
             }
         }
         res.sendStatus(200);
@@ -583,10 +713,46 @@ app.post('/api/payments/webhook', async (req, res) => {
     }
 });
 
+
+
+// Cleaner de pedidos expirados (5 minutos)
+setInterval(async () => {
+    try {
+        const sql = db.getSql();
+        // Busca pedidos em aguardando_pagamento criados há mais de 5 minutos
+        const expiredOrders = await sql`
+            SELECT * FROM orders 
+            WHERE status = 'aguardando_pagamento' 
+            AND created_at < NOW() - INTERVAL '5 minutes'
+        `;
+
+        for (const order of expiredOrders) {
+            console.log(`[Cleaner] Cancelando pedido expirado #${order.id}`);
+            await sql`UPDATE orders SET status = 'cancelado' WHERE id = ${order.id}`;
+
+            const updatedOrder = await db.getOrderById(order.id);
+            if (updatedOrder) {
+                io.emit('pedido_atualizado', updatedOrder);
+
+                if (updatedOrder.customer_phone) {
+                    sendWhatsAppMessage(updatedOrder.customer_phone,
+                        `🛑 *PEDIDO CANCELADO* (#${order.id})\n\nO tempo para pagamento expirou (5 min). Se ainda desejar os itens, por favor refaça seu pedido! 🍻`
+                    );
+                }
+            }
+        }
+    } catch (e) {
+        console.error('[Cleaner] Erro ao limpar pedidos:', e.message);
+    }
+}, 60000); // Roda a cada 1 minuto
+
 server.listen(PORT, () => {
     console.log(`🚀 SERVIDOR REAL-TIME EM: http://localhost:${PORT}`);
 }).on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
+        console.error(`🛑 ERRO: A porta ${PORT} já está em uso!`);
         process.exit(1);
+    } else {
+        console.error('🛑 ERRO no servidor:', err);
     }
 });

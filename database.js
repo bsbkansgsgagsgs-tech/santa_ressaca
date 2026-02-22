@@ -33,6 +33,11 @@ const Database = {
             await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pendente'`.catch(() => { });
             await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pendente'`.catch(() => { });
             await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_address TEXT`.catch(() => { });
+            await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS mp_payment_id TEXT`.catch(() => { });
+            await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT 'online'`.catch(() => { });
+            await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS change_amount NUMERIC`.catch(() => { });
+            await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email TEXT`.catch(() => { });
+            await sql`ALTER TABLE orders ADD COLUMN IF NOT EXISTS closure_id INTEGER`.catch(() => { });
 
             // SINCRO DA TABELA USERS
 
@@ -50,6 +55,18 @@ const Database = {
             `;
 
             await sql`
+                CREATE TABLE IF NOT EXISTS cash_closures (
+                    id SERIAL PRIMARY KEY,
+                    opening_value NUMERIC NOT NULL,
+                    closing_value NUMERIC,
+                    expected_value NUMERIC,
+                    status TEXT DEFAULT 'open',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    closed_at TIMESTAMP
+                )
+            `;
+
+            await sql`
                 CREATE TABLE IF NOT EXISTS orders (
                     id SERIAL PRIMARY KEY,
                     customer_id INTEGER REFERENCES users(id),
@@ -60,6 +77,7 @@ const Database = {
                     status TEXT DEFAULT 'pendente',
                     payment_status TEXT DEFAULT 'pendente',
                     delivery_address TEXT,
+                    closure_id INTEGER REFERENCES cash_closures(id),
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             `;
@@ -126,6 +144,9 @@ const Database = {
         const sql = Database.getSql();
         if (!sql) throw new Error('Sem banco.');
         try {
+            // const openClosure = await Database.getOpenClosure(); // REMOVED
+            // const closureId = openClosure ? openClosure.id : null; // REMOVED
+
             const { customer_id, customer_name, customer_phone, items, total, delivery_address } = data;
             const res = await sql`
                 INSERT INTO orders (customer_id, customer_name, customer_phone, items, total, delivery_address)
@@ -250,17 +271,21 @@ const Database = {
     // RELATÓRIOS
     getStats: async () => {
         const sql = Database.getSql();
-        const today = new Date().toISOString().split('T')[0];
+        try {
+            // Filtra por pedidos de hoje (data atual)
+            const revenueRes = await sql`SELECT SUM(total) as total FROM orders WHERE status = 'entregue' AND created_at >= CURRENT_DATE`;
+            const countRes = await sql`SELECT COUNT(*) as count FROM orders WHERE created_at >= CURRENT_DATE`;
+            const topProducts = await sql`SELECT items, COUNT(*) as qty FROM orders WHERE created_at >= CURRENT_DATE GROUP BY items ORDER BY qty DESC LIMIT 3`;
 
-        const revenueRes = await sql`SELECT SUM(total) as total FROM orders WHERE status = 'entregue' AND created_at >= ${today}`;
-        const countRes = await sql`SELECT COUNT(*) as count FROM orders WHERE created_at >= ${today}`;
-        const topProducts = await sql`SELECT items, COUNT(*) as qty FROM orders GROUP BY items ORDER BY qty DESC LIMIT 3`;
-
-        return {
-            todayRevenue: revenueRes[0].total || 0,
-            todayCount: parseInt(countRes[0].count) || 0,
-            topProducts: topProducts
-        };
+            return {
+                todayRevenue: revenueRes[0].total || 0,
+                todayCount: parseInt(countRes[0].count) || 0,
+                topProducts: topProducts
+            };
+        } catch (e) {
+            console.error('❌ Erro ao buscar stats:', e.message);
+            return { todayRevenue: 0, todayCount: 0, topProducts: [] };
+        }
     },
 
     // CHAT
@@ -293,13 +318,26 @@ const Database = {
         const res = await sql`
             SELECT id FROM orders 
             WHERE (customer_phone LIKE ${'%' + lastDigits})
-            AND status != 'entregue' AND status != 'cancelado'
             ORDER BY created_at DESC LIMIT 1
         `;
         return res[0] ? res[0].id : null;
     },
 
-    validatePassword: (password, hash) => bcrypt.compareSync(password, hash)
+    resetAllOrders: async () => {
+        const sql = Database.getSql();
+        if (!sql) return;
+        try {
+            await sql`DELETE FROM messages`;
+            await sql`DELETE FROM orders`;
+            return true;
+        } catch (e) {
+            console.error('❌ Erro ao resetar pedidos:', e.message);
+            throw e;
+        }
+    },
+
+    validatePassword: (password, hash) => bcrypt.compareSync(password, hash),
+
 };
 
 Database.init();

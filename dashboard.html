@@ -199,23 +199,22 @@
 
         .kanban-board {
             display: flex;
-            padding: 24px;
-            gap: 24px;
+            gap: 32px;
+            padding: 32px 40px;
             overflow-x: auto;
-            flex: 1;
+            height: calc(100vh - 180px);
             align-items: flex-start;
         }
 
-        .kanban-col {
-            min-width: 320px;
-            max-width: 400px;
-            flex: 1;
+        .kanban-column {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 340px;
+            min-width: 340px;
+            flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            background: var(--dark-gray);
-            border-radius: 12px;
-            border: 1px solid var(--border);
             max-height: 100%;
         }
 
@@ -543,13 +542,195 @@
             color: var(--yellow);
         }
 
-        ::-webkit-scrollbar {
-            width: 6px;
+        /* FLOATING CHAT - MODERN WHATSAPP STYLE */
+        .floating-chat-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 10px;
+        .chat-toggle-btn {
+            width: 60px;
+            height: 60px;
+            background: #25d366;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .chat-toggle-btn:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #000;
+        }
+
+        .chat-panel {
+            width: 380px;
+            height: 600px;
+            background: #0b141a;
+            /* WhatsApp Dark Mode BG */
+            border: 1px solid #222e35;
+            border-radius: 16px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            animation: slideInChat 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideInChat {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .chat-panel-header {
+            background: #202c33;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .chat-panel-header h3 {
+            font-size: 1rem;
+            color: #e9edef;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .order-selector {
+            padding: 12px 20px;
+            background: #111b21;
+            border-bottom: 1px solid #222e35;
+        }
+
+        .order-selector select {
+            width: 100%;
+            background: #202c33;
+            border: none;
+            padding: 10px;
+            color: #e9edef;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        #chat-messages-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
+            /* WA wallpaper */
+            background-blend-mode: overlay;
+            background-color: rgba(11, 20, 26, 0.95);
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            word-wrap: break-word;
+        }
+
+        .chat-message.customer {
+            align-self: flex-start;
+            background: #202c33;
+            color: #e9edef;
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-message.admin {
+            align-self: flex-end;
+            background: #005c4b;
+            /* WA Admin color */
+            color: #e9edef;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-input-area {
+            background: #202c33;
+            padding: 12px 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            background: #2a3942;
+            border: none;
+            padding: 12px 16px;
+            color: #e9edef;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .btn-send-chat {
+            background: #00a884;
+            color: #fff;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-send-chat:hover {
+            transform: scale(1.1);
+            background: #00c096;
         }
     </style>
 </head>
@@ -558,28 +739,42 @@
     <div class="floating-chat-container">
         <div class="chat-panel" id="chat-panel">
             <div class="chat-panel-header">
-                <h3>💬 Chat Integrado (WA)</h3>
+                <h3><span style="color: #25d366;">●</span> Chat com Clientes</h3>
                 <button onclick="toggleChat()"
-                    style="background:none; border:none; color:#888; cursor:pointer;">✕</button>
+                    style="background:none; border:none; color:#e9edef; cursor:pointer; font-size: 1.2rem;">✕</button>
             </div>
+
             <div class="order-selector">
                 <select id="chat-order-select" onchange="loadSelectedOrderChat()">
                     <option value="">Selecione um pedido para conversar...</option>
                 </select>
             </div>
+
             <div id="chat-messages-container">
-                <div style="text-align:center; color:#666; margin-top:20px;">Selecione um pedido acima para ver as
-                    mensagens</div>
+                <div style="text-align:center; color:#8696a0; margin-top:20px; font-size: 0.85rem;">
+                    Selecione um pedido para visualizar o histórico de mensagens via WhatsApp.
+                </div>
             </div>
+
             <div class="chat-input-area">
-                <input type="text" id="chat-input" placeholder="Digite sua mensagem..."
+                <input type="text" id="chat-input" placeholder="Mensagem..."
                     onkeypress="if(event.key==='Enter') sendChatMessage()">
-                <button class="btn-yellow" onclick="sendChatMessage()" style="padding: 10px;">ENVIAR</button>
+                <button class="btn-send-chat" onclick="sendChatMessage()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z">
+                        </path>
+                    </svg>
+                </button>
             </div>
         </div>
+
         <button class="chat-toggle-btn" onclick="toggleChat()">
-            💬
-            <div class="chat-badge" id="chat-badge">0</div>
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="white">
+                <path
+                    d="M19.005 3.175H4.674C3.642 3.175 2.8 4.017 2.8 5.049V19.005L5.617 16.188H19.005C20.037 16.188 20.879 15.346 20.879 14.314V5.049C20.879 4.017 20.037 3.175 19.005 3.175ZM18.067 13.376H5.617V12.438H18.067V13.376ZM18.067 10.56H5.617V9.622H18.067V10.56ZM18.067 7.743H5.617V6.805H18.067V7.743Z">
+                </path>
+            </svg>
+            <div class="chat-badge" id="chat-badge" style="display: none;">0</div>
         </button>
     </div>
     <aside class="sidebar">
@@ -591,9 +786,6 @@
             <div class="nav-label">OPERAÇÕES</div>
             <div class="nav-item active" onclick="switchView('pedidos', this)">
                 VISÃO GERAL
-            </div>
-            <div class="nav-item" onclick="switchView('relatorios', this)">
-                RELATÓRIOS
             </div>
         </nav>
 
@@ -630,19 +822,48 @@
                 <div id="status-badge"
                     style="font-size: 0.8rem; font-weight: 900; color: #10b981; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; font-family: 'Bebas Neue', sans-serif;">
                     <span
-                        style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);"></span>
+                        style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 12px rgba(16, 185, 129, 0.6); animation: pulse 2s infinite;"></span>
                     SISTEMA ONLINE
                 </div>
                 <a href="/api/admin/logout" class="btn-move"
-                    style="text-decoration: none; display: flex; align-items: center; justify-content: center;">SAIR</a>
+                    style="text-decoration: none; display: flex; align-items: center; justify-content: center; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2);">SAIR</a>
             </div>
         </header>
 
+        <style>
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+
+                50% {
+                    transform: scale(1.2);
+                    opacity: 0.7;
+                }
+
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+        </style>
+
         <div id="toast-container"></div>
+
 
         <!-- VIEW: PEDIDOS (KANBAN) -->
         <section id="view-pedidos" class="dashboard-view active">
             <section class="kanban-board">
+                <!-- AGUARDANDO PAGAMENTO -->
+                <div class="kanban-col">
+                    <div class="col-header" style="border-bottom-color: #666;">
+                        <span class="col-title">⏳ AGUARDANDO PAGTO</span>
+                        <span class="col-count" id="count-aguardando_pagamento">0</span>
+                    </div>
+                    <div id="list-aguardando_pagamento" class="order-list-admin"></div>
+                </div>
+
                 <!-- PENDENTE -->
                 <div class="kanban-col">
                     <div class="col-header pendente">
@@ -681,32 +902,6 @@
             </section>
         </section>
 
-        <!-- VIEW: RELATORIOS -->
-        <section id="view-relatorios" class="dashboard-view">
-            <h3>📊 Relatórios de Vendas</h3>
-            <div class="placeholder-content">
-                <div class="stats-grid"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
-                    <div class="stats-box-sidebar">
-                        <span class="stat-label">Vendas Brutas (Mês)</span>
-                        <span class="stat-val">R$ 4.250,00</span>
-                    </div>
-                    <div class="stats-box-sidebar">
-                        <span class="stat-label">Ticket Médio</span>
-                        <span class="stat-val">R$ 85,00</span>
-                    </div>
-                    <div class="stats-box-sidebar">
-                        <span class="stat-label">Top Produtos</span>
-                        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;">
-                            1. Combo Sextou<br>2. Cerveja Corona<br>3. Gelo 5kg
-                        </p>
-                    </div>
-                </div>
-                <p style="margin-top: 60px; color: var(--text-muted); text-align: center; font-size: 0.875rem;">
-                    Gráficos detalhados serão implementados na próxima versão.
-                </p>
-            </div>
-        </section>
 
         <!-- VIEW: PRODUTOS -->
         <section id="view-produtos" class="dashboard-view">
@@ -802,26 +997,6 @@
             </div>
         </div>
 
-        <!-- MODAL: CHAT INTERNO -->
-        <div id="adminChatModal" class="modal">
-            <div class="modal-content aggressive-border" style="max-width: 600px;">
-                <span class="close-btn" onclick="closeAdminChatModal()">&times;</span>
-                <h2 class="modal-title">CHAT COM <span class="highlight" id="admin-chat-customer-name">CLIENTE</span>
-                </h2>
-                <div class="order-id-badge" style="margin-bottom: 15px;">Pedido #<span
-                        id="admin-chat-order-id">---</span></div>
-
-                <div id="admin-chat-messages" class="chat-messages-container">
-                    <!-- Mensagens -->
-                </div>
-
-                <form onsubmit="sendAdminChat(event)" class="chat-input-row">
-                    <input type="text" id="admin-chat-input" placeholder="Digite sua resposta..." required>
-                    <button type="submit" class="btn-primary aggressive" style="padding: 10px 20px;">RESPONDER</button>
-                </form>
-            </div>
-        </div>
-
 
         <!-- VIEW: SETTINGS (CONFIGURACOES) -->
         <section id="view-configuracoes" class="dashboard-view" style="padding: 40px; overflow-y: auto;">
@@ -899,37 +1074,24 @@
                         </div>
                     </div>
 
-                    <!-- MERCADO PAGO CONFIGURATION -->
-                    <div style="background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 32px;">
-                        <h3
-                            style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 24px; text-transform: uppercase; letter-spacing: 0.1em;">
-                            Pagamentos (Mercado Pago)</h3>
-
-                        <div style="display: flex; flex-direction: column; gap: 24px;">
-                            <div class="input-group">
-                                <label>Access Token</label>
-                                <input type="password" id="config-mp-token" placeholder="APP_USR-...">
-                                <p
-                                    style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
-                                    Seu token de acesso privado para processar pagamentos.
-                                </p>
-                            </div>
-                            <button class="btn-move" onclick="saveMPSettings()"
-                                style="width: 100%; background: #009ee3; color: #fff; padding: 14px;">SALVAR
-                                CONFIGURAÇÃO</button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2857/2857-preview.mp3"
+    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2857/2857-preview.mp3"
+        preload="auto"></audio>
+    <audio id="chat-sound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"
         preload="auto"></audio>
 
     <script>
         const socket = io();
-        const notifSound = document.getElementById('notif-sound');
+        const orderSound = document.getElementById('order-sound');
+        const chatSound = document.getElementById('chat-sound');
+
+        // Ajuste de volume
+        orderSound.volume = 1.0;
+        chatSound.volume = 1.0;
         let orders = [];
 
         async function init() {
@@ -939,6 +1101,23 @@
                 fetchProducts(),
                 fetchSettings()
             ]);
+        }
+
+        // Função para notificação por voz (TTS)
+        function notifyVoice(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'pt-BR';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                // Tenta encontrar uma voz em português
+                const voices = window.speechSynthesis.getVoices();
+                const brVoice = voices.find(v => v.lang.includes('pt-BR'));
+                if (brVoice) utterance.voice = brVoice;
+
+                window.speechSynthesis.speak(utterance);
+            }
         }
 
 
@@ -1098,7 +1277,6 @@
                 }
                 if (settings.delivery_time) document.getElementById('config-time').value = settings.delivery_time;
                 if (settings.operation_hours) document.getElementById('config-hours').value = settings.operation_hours;
-                if (settings.mp_access_token) document.getElementById('config-mp-token').value = settings.mp_access_token;
             } catch (e) { console.error('Erro settings:', e); }
         }
 
@@ -1126,24 +1304,9 @@
             showToast("Configurações salvas com sucesso!", "success");
         }
 
-        async function saveMPSettings() {
-            const token = document.getElementById('config-mp-token').value;
-
-            const res = await fetch('/api/admin/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: 'mp_access_token', value: token })
-            });
-
-            if (res.ok) {
-                showToast("Token do Mercado Pago salvo!", "success");
-            } else {
-                showToast("Erro ao salvar token.", "error");
-            }
-        }
 
         function renderBoard() {
-            const statuses = ['pendente', 'em_preparo', 'saiu_entrega', 'entregue'];
+            const statuses = ['aguardando_pagamento', 'pendente', 'em_preparo', 'saiu_entrega', 'entregue'];
             let revenue = 0;
             let count = 0;
 
@@ -1173,6 +1336,14 @@
             card.className = 'admin-order-card';
 
             const time = new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const methodLabels = { 'pix': 'PIX', 'cartao': 'CARTÃO', 'dinheiro': 'DINHEIRO', 'online': 'ONLINE' };
+            const methodLabel = methodLabels[order.payment_method] || (order.payment_method ? order.payment_method.toUpperCase() : 'PENDENTE');
+
+            let changeHtml = '';
+            if (order.payment_method === 'dinheiro' && order.change_amount) {
+                changeHtml = `<div style="color:var(--yellow); font-size:0.75rem; margin-top:4px; font-weight:bold;">💵 TROCO PARA: R$ ${parseFloat(order.change_amount).toFixed(2).replace('.', ',')}</div>`;
+            }
+
             const paymentStatus = (order.payment_status || 'pendente').toLowerCase();
             const paymentClass = paymentStatus === 'pago' ? 'payment-pago' : 'payment-pendente';
             const paymentLabel = paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE';
@@ -1183,10 +1354,23 @@
                     <span class="order-time">${time}</span>
                 </div>
                 <div class="customer-name">${order.customer_name}</div>
-                <div class="customer-phone">📞 ${order.customer_phone}</div>
-                <div class="payment-badge ${paymentClass}">
-                    PAGAMENTO: ${paymentLabel}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="customer-phone">📞 ${order.customer_phone}</div>
+                    <div style="position: relative;">
+                        <button class="btn-move" style="padding: 4px 8px; font-size: 0.7rem; background: #25d366; color: #000;" 
+                            onclick="openIntegratedChat(${order.id})">💬 CHAT</button>
+                        <div id="chat-indicator-${order.id}" style="display: none; position: absolute; top: -5px; right: -5px; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; border: 1px solid #000;"></div>
+                    </div>
                 </div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;">
+                    <div class="payment-badge ${paymentClass}">
+                        ${paymentLabel}
+                    </div>
+                    <div class="payment-badge" style="background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa;">
+                        MÉTODO: ${methodLabel}
+                    </div>
+                </div>
+                ${changeHtml}
                 <div class="order-items-box">${order.items}</div>
                 <div class="order-address">
                     <span>📍</span>
@@ -1221,6 +1405,11 @@
         }
 
         function getMoveButton(order) {
+            if (order.status === 'aguardando_pagamento')
+                return `
+                    <button class="btn-move" style="background:#555; color:#fff;" onclick="updateStatus(${order.id}, 'pendente')">FORÇAR PENDENTE</button>
+                    <button class="btn-action-small" onclick="updateStatus(${order.id}, 'cancelado')">✕</button>
+                `;
             if (order.status === 'pendente')
                 return `
                     <button class="btn-move" onclick="updateStatus(${order.id}, 'em_preparo')">PREPARAR</button>
@@ -1261,7 +1450,7 @@
             closeDeliveryModal();
         }
 
-        function switchView(viewId, btn) {
+        async function switchView(viewId, btn) {
             // Update Sidebar
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             btn.classList.add('active');
@@ -1308,7 +1497,8 @@
         socket.on('novo_pedido', (order) => {
             orders.unshift(order);
             renderBoard();
-            notifSound.play().catch(() => { });
+            orderSound.play().catch(() => { });
+            notifyVoice("Olá Santa Ressaca, novo pedido chegou");
         });
 
         socket.on('pedido_atualizado', (order) => {
@@ -1317,6 +1507,12 @@
                 orders[idx] = order;
                 renderBoard();
             }
+        });
+
+        socket.on('pedidos_resetados', () => {
+            orders = [];
+            renderBoard();
+            showToast("O histórico foi limpo pelo administrador.", "warning");
         });
 
         // WHATSAPP SOCKETS
@@ -1330,7 +1526,7 @@
             const actions = document.getElementById('wa-actions');
 
             qrContainer.style.display = 'block';
-            actions.style.display = 'none'; // Esconde botões enquanto aguarda QR
+            actions.style.display = 'none';
             badge.innerText = 'AGUARDANDO LEITURA';
             badge.style.color = '#f39c12';
             dot.className = 'wa-status-circle disconnected';
@@ -1355,219 +1551,144 @@
                 dot.className = 'wa-status-circle connected';
                 instruction.innerText = 'Seu WhatsApp está pronto para enviar notificações.';
                 qrContainer.style.display = 'none';
-                actions.style.display = 'flex'; // Mostra botões quando conectado
+                actions.style.display = 'flex';
             } else if (status === 'DISCONNECTED') {
                 badge.innerText = 'DESCONECTADO';
                 badge.style.color = '#e74c3c';
                 dot.className = 'wa-status-circle disconnected';
                 instruction.innerText = 'Aguardando o servidor gerar o QR Code...';
-                qrContainer.style.display = 'none'; // Não mostra nada até ter o que mostrar
-                actions.style.display = 'none'; // Esconde botões ao desconectar
-            } else {
-                badge.innerText = status;
-                badge.style.color = '#666';
-                dot.className = 'wa-status-circle disconnected';
                 qrContainer.style.display = 'none';
                 actions.style.display = 'none';
             }
         });
 
         async function logoutWhatsApp() {
-            if (!confirm("Deseja realmente desconectar o WhatsApp do site? Isso impedirá o envio de notificações.")) return;
+            if (!confirm("Deseja realmente desconectar o WhatsApp do site?")) return;
             try {
                 const res = await fetch('/api/admin/whatsapp/logout', { method: 'POST' });
-                const data = await res.json();
-                if (res.ok) {
-                    showToast(data.message, "success");
-                } else {
-                    showToast(data.error, "error");
-                }
-            } catch (e) {
-                showToast("Erro ao tentar desconectar.", "error");
-            }
+                if (res.ok) showToast("WhatsApp desconectado.", "success");
+            } catch (e) { showToast("Erro ao desconectar.", "error"); }
         }
 
-        // PREMIUM TOAST SYSTEM
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             if (!container) return;
             const toast = document.createElement('div');
-            const icons = { 'success': '✅', 'error': '❌', 'warning': '⚠️', 'info': 'ℹ️' };
-
+            const icons = { 'success': '✅', 'error': '❌', 'warning': '⚠️' };
             toast.className = `toast ${type}-premium`;
             toast.innerHTML = `
                 <div class="toast-icon">${icons[type] || '🔔'}</div>
                 <div class="toast-content"><div class="toast-msg">${message}</div></div>
-                <div class="toast-progress"></div>
             `;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('toast-outro');
-                toast.addEventListener('animationend', () => toast.remove());
-            }, 4500);
+            setTimeout(() => { toast.remove(); }, 4500);
         }
 
-        // CHAT ADMIN FUNCTIONS
-        async function openOrderChat(id, name) {
-            const modal = document.getElementById('adminChatModal');
-            const chatBox = document.getElementById('admin-chat-messages');
-
-            document.getElementById('admin-chat-order-id').innerText = id;
-            document.getElementById('admin-chat-customer-name').innerText = name;
-            document.getElementById('chat-indicator-' + id).style.display = 'none';
-
-            chatBox.innerHTML = '<p style="color: #555; text-align: center;">Carregando...</p>';
-            modal.style.display = 'flex';
-
-            loadAdminChatMessages(id);
-        }
-
-        function closeAdminChatModal() {
-            document.getElementById('adminChatModal').style.display = 'none';
-        }
-
-        async function loadAdminChatMessages(orderId) {
-            try {
-                const res = await fetch(`/api/admin/orders/${orderId}/messages`);
-                const messages = await res.json();
-                const chatBox = document.getElementById('admin-chat-messages');
-
-                chatBox.innerHTML = messages.length === 0 ?
-                    '<p style="color: #555; text-align: center;">Nenhuma mensagem ainda.</p>' : '';
-
-                messages.forEach(msg => {
-                    appendAdminChatBubble(msg.sender_role, msg.message);
-                });
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (e) { console.error(e); }
-        }
-
-        function appendAdminChatBubble(role, text) {
-            const chatBox = document.getElementById('admin-chat-messages');
-            const emptyMsg = chatBox.querySelector('p[style*="text-align: center"]');
-            if (emptyMsg) emptyMsg.remove();
-
-            const bubble = document.createElement('div');
-            bubble.className = `chat-bubble-admin bubble-${role}`;
-            bubble.innerText = text;
-            chatBox.appendChild(bubble);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        async function sendAdminChat(e) {
-            e.preventDefault();
-            const id = document.getElementById('admin-chat-order-id').innerText;
-            const input = document.getElementById('admin-chat-input');
-            const msg = input.value.trim();
-            if (!msg || id === '---') return;
-
-            try {
-                const res = await fetch(`/api/admin/orders/${id}/messages`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sender_role: 'admin', message: msg })
-                });
-                if (res.ok) {
-                    input.value = '';
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        // Socket listener para chat
-        socket.on('novo_chat_msg', (data) => {
-            const modal = document.getElementById('adminChatModal');
-            const currentChatId = document.getElementById('admin-chat-order-id').innerText;
-
-            if (modal.style.display === 'flex' && data.order_id == currentChatId) {
-                appendAdminChatBubble(data.sender_role, data.message);
-            } else if (data.sender_role === 'customer') {
-                // Mostra indicador no card
-                const indicator = document.getElementById('chat-indicator-' + data.order_id);
-                if (indicator) indicator.style.display = 'block';
-            }
-        });
-
-        init();
-        // --- LOGICA CHAT INTEGRADO ---
+        // --- LOGICA CHAT INTEGRADO (MODERNA) ---
         let currentChatOrderId = null;
         let unreadCount = 0;
 
+        function updateChatBadge() {
+            const badge = document.getElementById('chat-badge');
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function toggleChat() {
             const panel = document.getElementById('chat-panel');
-            const isVisible = panel.style.display === 'flex';
-            panel.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) {
+            if (panel.style.display === 'flex') {
+                panel.style.display = 'none';
                 unreadCount = 0;
                 updateChatBadge();
+            } else {
+                panel.style.display = 'flex';
                 updateOrderSelector();
             }
         }
 
-        function updateChatBadge() {
-            const badge = document.getElementById('chat-badge');
-            badge.innerText = unreadCount;
-            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        function openIntegratedChat(orderId) {
+            const panel = document.getElementById('chat-panel');
+            panel.style.display = 'flex';
+            currentChatOrderId = orderId;
+            updateOrderSelector().then(() => {
+                document.getElementById('chat-order-select').value = orderId;
+                loadSelectedOrderChat();
+            });
         }
 
-        function updateOrderSelector() {
+        async function updateOrderSelector() {
             const select = document.getElementById('chat-order-select');
             const currentVal = select.value;
-            select.innerHTML = '<option value="">Selecione um pedido...</option>';
+            select.innerHTML = '<option value="">Selecione um pedido para conversar...</option>';
 
-            // Mostra os 15 pedidos mais recentes
-            const activeOrders = orders.slice(0, 15);
+            const activeOrders = orders.filter(o => o.status !== 'entregue' && o.status !== 'cancelado');
             activeOrders.forEach(o => {
                 const opt = document.createElement('option');
                 opt.value = o.id;
-                opt.innerText = `#${o.id} - ${o.customer_name} (${o.status})`;
+                opt.innerText = `#${o.id} - ${o.customer_name}`;
                 select.appendChild(opt);
             });
-            select.value = currentVal;
+
+            if (currentVal) select.value = currentVal;
         }
 
         async function loadSelectedOrderChat() {
             const select = document.getElementById('chat-order-select');
-            currentChatOrderId = select.value;
+            const orderId = select.value;
+            currentChatOrderId = orderId;
             const container = document.getElementById('chat-messages-container');
 
-            if (!currentChatOrderId) {
-                container.innerHTML = '<div style="text-align:center; color:#666; margin-top:20px;">Selecione um pedido acima para ver as mensagens</div>';
+            if (!orderId) {
+                container.innerHTML = '<div style="text-align:center; color:#8696a0; margin-top:20px; font-size: 0.85rem;">Selecione um pedido para conversar.</div>';
                 return;
             }
 
-            container.innerHTML = '<div style="text-align:center; color:#666;">Carregando...</div>';
-
             try {
-                const res = await fetch(`/api/admin/orders/${currentChatOrderId}/messages`);
+                const res = await fetch(`/api/admin/orders/${orderId}/messages`);
                 const messages = await res.json();
                 renderChatMessages(messages);
+
+                // Limpa indicador de chat no card
+                const indicator = document.getElementById('chat-indicator-' + orderId);
+                if (indicator) indicator.style.display = 'none';
             } catch (e) {
-                container.innerHTML = '<div style="text-align:center; color:red;">Erro ao carregar mensagens.</div>';
+                console.error('Erro ao carregar mensagens:', e);
             }
         }
 
         function renderChatMessages(messages) {
             const container = document.getElementById('chat-messages-container');
             container.innerHTML = '';
+
+            if (messages.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#8696a0; margin-top:20px; font-size: 0.85rem;">Nenhuma mensagem ainda.</div>';
+                return;
+            }
+
             messages.forEach(m => {
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `chat-message ${m.sender_role}`;
                 msgDiv.innerText = m.message;
                 container.appendChild(msgDiv);
             });
+
             container.scrollTop = container.scrollHeight;
         }
 
         async function sendChatMessage() {
             const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
-            if (!msg || !currentChatOrderId) return;
+            const message = input.value.trim();
+            if (!message || !currentChatOrderId) return;
 
             try {
                 const res = await fetch(`/api/admin/orders/${currentChatOrderId}/messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sender_role: 'admin', message: msg })
+                    body: JSON.stringify({ sender_role: 'admin', message })
                 });
 
                 if (res.ok) {
@@ -1579,21 +1700,38 @@
             }
         }
 
+        async function resetOrders() {
+            if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os pedidos e mensagens do banco de dados definitivamente. Continuar?")) return;
+            try {
+                const res = await fetch('/api/admin/reset-orders', { method: 'POST' });
+                if (res.ok) {
+                    showToast("Todo o histórico foi apagado.", "success");
+                }
+            } catch (e) { showToast("Erro ao resetar dados.", "error"); }
+        }
+
+        // Socket listener para chat
         socket.on('novo_chat_msg', (data) => {
             if (data.order_id == currentChatOrderId) {
                 loadSelectedOrderChat();
-            } else {
+            } else if (data.sender_role === 'customer') {
                 unreadCount++;
                 updateChatBadge();
+                chatSound.play().catch(() => { });
+
+                const indicator = document.getElementById('chat-indicator-' + data.order_id);
+                if (indicator) indicator.style.display = 'block';
             }
         });
 
-        // Auto-refresh do selector se novos pedidos chegarem
-        socket.on('novo_pedido', (order) => {
+        // Atualizar seletor se novos pedidos chegarem
+        socket.on('novo_pedido', () => {
             if (document.getElementById('chat-panel').style.display === 'flex') {
                 updateOrderSelector();
             }
         });
+
+        init();
     </script>
 </body>
 
