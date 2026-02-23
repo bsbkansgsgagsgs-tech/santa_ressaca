@@ -526,6 +526,18 @@
                     <input type="text" id="complement" placeholder="Apto, Bloco, etc.">
                 </div>
 
+                <div class="input-group">
+                    <label style="display:flex; align-items:center; gap:6px;">
+                        <span
+                            style="background:var(--yellow);color:#000;font-size:0.6rem;font-weight:900;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;">IMPORTANTE</span>
+                        Sabor / Observações
+                    </label>
+                    <input type="text" id="orderObservations"
+                        placeholder="Ex: Sabor Melancia, Tropic... ou qualquer observação">
+                    <small style="color:#666; font-size:0.75rem; margin-top:4px; display:block;">Informe o sabor
+                        desejado ou qualquer personalização.</small>
+                </div>
+
                 <div class="delivery-total">
                     <p class="final-price">Total: <span id="modalTotal">R$ 0,00</span></p>
                 </div>
@@ -1326,6 +1338,7 @@
             document.getElementById('neighborhood').value = '';
             document.getElementById('address').value = '';
             document.getElementById('complement').value = '';
+            document.getElementById('orderObservations').value = '';
             document.getElementById('orderModal').style.display = 'flex';
         }
 
@@ -1375,10 +1388,12 @@
                 return;
             }
 
+            const observations = document.getElementById('orderObservations').value.trim();
+
             const orderData = {
                 customer_name: currentUser ? currentUser.name : 'Visitante',
                 customer_phone: phone,
-                items: currentProduct.name + '\n' + currentProduct.items,
+                items: currentProduct.name + (observations ? '\nObs: ' + observations : ''),
                 total: total,
                 delivery_address: `${address}, ${neighborhood}` + (complement ? ` - ${complement}` : '')
             };

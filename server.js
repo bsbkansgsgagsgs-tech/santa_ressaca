@@ -754,6 +754,145 @@ app.post('/api/payments/webhook', async (req, res) => {
 });
 
 
+// ============================================
+// IMPORTAÇÃO EM MASSA DE PRODUTOS (IA + TXT)
+// ============================================
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+
+// Multer em memória para importação (não salva em disco)
+const importStorage = multer.memoryStorage();
+const importUpload = multer({
+    storage: importStorage,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    fileFilter: (req, file, cb) => {
+        const allowed = /jpeg|jpg|png|webp|txt/;
+        const ext = allowed.test(require('path').extname(file.originalname).toLowerCase());
+        const mime = allowed.test(file.mimetype) || file.mimetype === 'text/plain';
+        if (ext || mime) return cb(null, true);
+        cb(new Error('Apenas imagens (jpg/png/webp) ou arquivos .txt são permitidos.'));
+    }
+});
+
+// Parser de arquivo TXT
+function parseTxtProducts(text) {
+    const products = [];
+    const blocks = text.split(/---+/);
+    for (const block of blocks) {
+        const lines = block.trim().split('\n');
+        const obj = {};
+        for (const line of lines) {
+            const match = line.match(/^(Nome|Preco|Preço|Categoria|Descricao|Descrição)\s*:\s*(.+)/i);
+            if (match) {
+                const key = match[1].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                obj[key] = match[2].trim();
+            }
+        }
+        if (obj.nome && obj.preco) {
+            products.push({
+                name: obj.nome,
+                price: parseFloat(obj.preco.replace(',', '.')),
+                category: obj.categoria || 'Bebidas',
+                description: obj.descricao || '',
+                image_url: '',
+                is_active: true
+            });
+        }
+    }
+    return products;
+}
+
+// Endpoint: analisar arquivo (imagem ou TXT) e retornar produtos extraídos
+app.post('/api/admin/products/import-analyze', adminSession, requireAdmin, importUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+
+        const isTxt = req.file.originalname.toLowerCase().endsWith('.txt') || req.file.mimetype === 'text/plain';
+
+        if (isTxt) {
+            const text = req.file.buffer.toString('utf-8');
+            const products = parseTxtProducts(text);
+            if (products.length === 0) {
+                return res.status(400).json({ error: 'Nenhum produto encontrado no TXT. Verifique o formato (Nome: / Preco: / Categoria: / Descricao: / ---).' });
+            }
+            return res.json({ products, source: 'txt' });
+        }
+
+        // Imagem — usa Gemini Vision
+        if (!GEMINI_API_KEY) {
+            return res.status(400).json({ error: 'Chave GEMINI_API_KEY não configurada no .env. A análise de imagens requer essa chave.' });
+        }
+
+        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const imageBase64 = req.file.buffer.toString('base64');
+        const mimeType = req.file.mimetype;
+
+        const prompt = `Analise esta imagem e extraia todos os produtos visíveis (bebidas, alimentos, combos, etc).
+Para cada produto encontrado, retorne um JSON array com os campos:
+- name: nome do produto (string)
+- price: preço em reais como número (ex: 12.50). Se não visível, use 0
+- category: uma dessas opções exatas: "Bebidas", "Combos", "Conveniência"
+- description: breve descrição (1 linha)
+- image_url: sempre string vazia ""
+- is_active: sempre true
+
+Retorne SOMENTE o JSON array, sem texto extra, sem markdown, sem \`\`\`. Exemplo:
+[{"name":"Heineken 600ml","price":18.00,"category":"Bebidas","description":"Long neck gelada","image_url":"","is_active":true}]`;
+
+        const result = await model.generateContent([
+            prompt,
+            { inlineData: { mimeType, data: imageBase64 } }
+        ]);
+
+        const rawText = result.response.text().trim();
+        console.log('[Gemini] Resposta bruta:', rawText.substring(0, 200));
+
+        // Extrai o JSON da resposta (remove possível markdown)
+        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            return res.status(422).json({ error: 'A IA não conseguiu identificar produtos nesta imagem. Tente com uma imagem mais clara de um cardápio ou lista de produtos.' });
+        }
+
+        const products = JSON.parse(jsonMatch[0]);
+        res.json({ products, source: 'image' });
+
+    } catch (e) {
+        console.error('[Import] Erro:', e.message);
+        res.status(500).json({ error: 'Erro ao analisar arquivo: ' + e.message });
+    }
+});
+
+// Endpoint: salvar múltiplos produtos de uma vez
+app.post('/api/admin/products/bulk-create', adminSession, requireAdmin, async (req, res) => {
+    try {
+        const { products } = req.body;
+        if (!products || !Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ error: 'Nenhum produto para salvar.' });
+        }
+
+        const saved = [];
+        for (const p of products) {
+            if (!p.name || !p.price) continue;
+            const prod = await db.createProduct({
+                name: p.name,
+                price: parseFloat(p.price),
+                category: p.category || 'Bebidas',
+                description: p.description || '',
+                image_url: p.image_url || '',
+                is_active: p.is_active !== false
+            });
+            saved.push(prod);
+        }
+
+        console.log(`[Import] ${saved.length} produto(s) importados com sucesso.`);
+        res.status(201).json({ count: saved.length, products: saved });
+    } catch (e) {
+        console.error('[Bulk Create] Erro:', e.message);
+        res.status(500).json({ error: 'Erro ao salvar produtos: ' + e.message });
+    }
+});
 
 // Cleaner de pedidos expirados (5 minutos)
 setInterval(async () => {

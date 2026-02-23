@@ -358,6 +358,52 @@
         }
 
         /* BUTTONS */
+        .btn-print {
+            background: transparent;
+            color: #aaa;
+            border: 1px solid #444;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-print:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            border-color: #888;
+        }
+
+        /* THERMAL PRINT STYLES */
+        @media print {
+            @page {
+                size: 80mm auto;
+                margin: 4mm 2mm;
+            }
+
+            body * {
+                visibility: hidden !important;
+            }
+
+            #thermal-receipt,
+            #thermal-receipt * {
+                visibility: visible !important;
+            }
+
+            #thermal-receipt {
+                position: fixed !important;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+            }
+        }
+
         .btn-move {
             background: var(--yellow);
             color: var(--black);
@@ -1081,6 +1127,102 @@
             }
         </style>
 
+        <!-- IMPORT MODAL STYLES -->
+        <style>
+            .import-dropzone {
+                border: 2px dashed #333;
+                border-radius: 12px;
+                padding: 40px 20px;
+                text-align: center;
+                cursor: pointer;
+                transition: 0.3s;
+                background: #0a0a0a;
+            }
+
+            .import-dropzone:hover,
+            .import-dropzone.drag-over {
+                border-color: var(--yellow);
+                background: rgba(255, 255, 51, 0.03);
+            }
+
+            .import-dropzone-inner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                pointer-events: none;
+            }
+
+            .import-dropzone.drag-over .import-dropzone-inner {
+                pointer-events: none;
+            }
+
+            .import-spinner {
+                width: 50px;
+                height: 50px;
+                border: 4px solid #333;
+                border-top: 4px solid var(--yellow);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .import-row {
+                background: #111;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                padding: 14px;
+                margin-bottom: 10px;
+                display: grid;
+                grid-template-columns: 1fr 1fr 100px auto;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .import-row input,
+            .import-row select {
+                background: #000 !important;
+                border: 1px solid #333 !important;
+                color: #fff !important;
+                padding: 8px !important;
+                border-radius: 6px !important;
+                font-size: 0.8rem;
+                outline: none;
+            }
+
+            .import-row .import-row-del {
+                background: transparent;
+                border: 1px solid #333;
+                color: #ef4444;
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1rem;
+                transition: 0.2s;
+            }
+
+            .import-row .import-row-del:hover {
+                background: rgba(239, 68, 68, 0.1);
+                border-color: #ef4444;
+            }
+
+            @media (max-width: 600px) {
+                .import-row {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+
         <div id="toast-container"></div>
 
 
@@ -1144,12 +1286,15 @@
                     <p style="color: var(--text-muted); font-size: 0.875rem; margin-top: 4px;">Gerencie os itens do seu
                         cardápio</p>
                 </div>
-                <div style="display: flex; gap: 16px;">
+                <div style="display: flex; gap: 16px; flex-wrap: wrap;">
                     <div class="search-area">
                         <span>🔍</span>
                         <input type="text" id="product-search" placeholder="Buscar produto..."
                             onkeyup="filterProducts()">
                     </div>
+                    <button class="btn-move" onclick="openImportModal()"
+                        style="padding: 12px 24px; background: transparent; color: var(--yellow); border: 2px solid var(--yellow);">📦
+                        IMPORTAR</button>
                     <button class="btn-move" onclick="openProductModal()" style="padding: 12px 24px;">+ ADICIONAR
                         ITEM</button>
                 </div>
@@ -1243,6 +1388,115 @@
                         style="margin-top: 10px; display: none; color: #f44336;" onclick="deleteProduct()">EXCLUIR
                         PRODUTO</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- MODAL: IMPORTAÇÃO EM MASSA -->
+        <div id="importModal" class="modal">
+            <div class="modal-content" style="max-width: 720px; max-height: 90vh; overflow-y: auto;">
+                <span class="close-btn" onclick="closeImportModal()">&times;</span>
+                <h2 class="modal-title">📦 IMPORTAR <span class="highlight">PRODUTOS</span></h2>
+
+                <!-- STEP 1: Upload -->
+                <div id="import-step-upload">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-bottom: 20px;">
+                        Envie uma <b style="color: #fff;">imagem</b> (foto de cardápio/lista) ou um <b
+                            style="color: #fff;">arquivo .txt</b> com seus produtos.
+                    </p>
+
+                    <div id="import-dropzone" class="import-dropzone">
+                        <input type="file" id="import-file-input" accept=".jpg,.jpeg,.png,.webp,.txt"
+                            style="display: none;" onchange="handleImportFileSelect(event)">
+                        <div class="import-dropzone-inner"
+                            onclick="document.getElementById('import-file-input').click()">
+                            <span style="font-size: 3rem;">📁</span>
+                            <b style="font-size: 1rem; color: #fff;">ARRASTE OU CLIQUE AQUI</b>
+                            <span style="font-size: 0.8rem; color: var(--text-muted);">Formatos: JPG, PNG, WEBP, TXT
+                                (máx. 10MB)</span>
+                        </div>
+                    </div>
+
+                    <div id="import-file-preview"
+                        style="display: none; margin-top: 16px; padding: 16px; background: #111; border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span id="import-file-icon" style="font-size: 1.5rem;">📄</span>
+                                <div>
+                                    <div id="import-file-name"
+                                        style="font-weight: 700; color: #fff; font-size: 0.9rem;"></div>
+                                    <div id="import-file-size" style="font-size: 0.75rem; color: var(--text-muted);">
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="clearImportFile()"
+                                style="background: transparent; border: 1px solid #333; color: #888; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">✕
+                                Remover</button>
+                        </div>
+                    </div>
+
+                    <div
+                        style="margin-top: 16px; padding: 12px; background: #111; border-radius: 8px; border: 1px solid var(--border);">
+                        <b style="font-size: 0.75rem; color: var(--yellow); letter-spacing: 1px;">💡 FORMATO DO TXT:</b>
+                        <pre
+                            style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px; white-space: pre-wrap; line-height: 1.6;">Nome: Schin Latão 350ml
+Preco: 5.00
+Categoria: Bebidas
+Descricao: 1x lata gelada
+---
+Nome: Combo Sextou
+Preco: 80.00
+Categoria: Combos
+Descricao: 6x Heineken + Gelo</pre>
+                    </div>
+
+                    <button id="btn-analyze-import" class="btn-primary"
+                        style="margin-top: 20px; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px;"
+                        onclick="analyzeImportFile()" disabled>🔍 ANALISAR ARQUIVO</button>
+                </div>
+
+                <!-- STEP 2: Loading -->
+                <div id="import-step-loading" style="display: none; text-align: center; padding: 40px 0;">
+                    <div class="import-spinner"></div>
+                    <p style="color: #fff; font-weight: 700; margin-top: 20px; font-size: 1rem;">Analisando arquivo...
+                    </p>
+                    <p id="import-loading-detail"
+                        style="color: var(--text-muted); font-size: 0.85rem; margin-top: 8px;">Extraindo produtos...</p>
+                </div>
+
+                <!-- STEP 3: Preview -->
+                <div id="import-step-preview" style="display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <p style="color: var(--text-muted); font-size: 0.85rem;">Encontramos <b id="import-count"
+                                style="color: var(--yellow);">0</b> produto(s). Edite antes de confirmar:</p>
+                        <button onclick="addImportRow()"
+                            style="background: transparent; border: 1px solid var(--yellow); color: var(--yellow); padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700;">+
+                            ADICIONAR</button>
+                    </div>
+
+                    <div id="import-products-list" style="max-height: 400px; overflow-y: auto;"></div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+                        <button onclick="backToUpload()"
+                            style="flex: 1; background: transparent; border: 1px solid #333; color: #888; padding: 14px; border-radius: 8px; cursor: pointer; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 1px;">←
+                            VOLTAR</button>
+                        <button id="btn-confirm-import" onclick="confirmImport()"
+                            style="flex: 2; background: var(--yellow); color: #000; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; font-weight: 900; letter-spacing: 1px;">✅
+                            CONFIRMAR E IMPORTAR</button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Success -->
+                <div id="import-step-success" style="display: none; text-align: center; padding: 40px 0;">
+                    <span style="font-size: 4rem;">🎉</span>
+                    <h3
+                        style="color: #fff; margin-top: 16px; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;">
+                        IMPORTAÇÃO CONCLUÍDA!</h3>
+                    <p id="import-success-msg" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">
+                    </p>
+                    <button onclick="closeImportModal()" class="btn-primary"
+                        style="margin-top: 24px; font-family: 'Bebas Neue', sans-serif; font-size: 1rem;">FECHAR</button>
+                </div>
             </div>
         </div>
 
@@ -1702,6 +1956,10 @@
             const paymentClass = paymentStatus === 'pago' ? 'payment-pago' : 'payment-pendente';
             const paymentLabel = paymentStatus === 'pago' ? 'PAGO' : 'PENDENTE';
 
+            // Serializa o pedido para o atributo de dados (para impressão)
+            const orderDataEncoded = encodeURIComponent(JSON.stringify(order));
+            const showPrintBtn = order.status !== 'aguardando_pagamento';
+
             card.innerHTML = `
                 <div class="card-top">
                     <span class="order-id">#${order.id}</span>
@@ -1732,7 +1990,8 @@
                 </div>
                 <div class="card-footer">
                     <span class="order-price" style="color: var(--yellow);">R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}</span>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        ${showPrintBtn ? `<button class="btn-print" onclick="printComanda(decodeURIComponent('${orderDataEncoded}'))">🖨️ IMPRIMIR</button>` : ''}
                         ${getMoveButton(order)}
                     </div>
                 </div>
@@ -1778,6 +2037,159 @@
                     <button class="btn-move" onclick="updateStatus(${order.id}, 'entregue')">ENTREGAR</button>
                 `;
             return '';
+        }
+
+        // ============================
+        // IMPRESSÃO DE COMANDA TÉRMICA
+        // ============================
+        function printComanda(orderJson) {
+            const order = JSON.parse(orderJson);
+
+            const methodLabels = { 'pix': 'PIX', 'cartao': 'CARTÃO', 'dinheiro': 'DINHEIRO', 'online': 'ONLINE' };
+            const methodLabel = methodLabels[order.payment_method] || (order.payment_method ? order.payment_method.toUpperCase() : 'N/D');
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const orderTime = new Date(order.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            let changeHtml = '';
+            if (order.payment_method === 'dinheiro' && order.change_amount) {
+                changeHtml = `
+                    <tr>
+                        <td colspan="3" style="padding: 2px 0; font-weight: bold;">💵 TROCO PARA: R$ ${parseFloat(order.change_amount).toFixed(2).replace('.', ',')}</td>
+                    </tr>`;
+            }
+
+            // Formata itens do pedido — apenas a primeira linha (título do produto/pedido)
+            const itemsRaw = order.items || '';
+            const itemLines = itemsRaw
+                .split('\n')
+                .map(i => i.trim())
+                .filter(i => i.length > 0)
+                .slice(0, 1) // Pega apenas o título (primeira linha)
+                .map(i => `<div style="padding: 2px 0; font-size: 13px; font-weight: bold;">• ${i}</div>`)
+                .join('');
+
+            const receiptHtml = `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Comanda #${order.id} - Santa Ressaca</title>
+                    <style>
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            font-family: 'Courier New', Courier, monospace;
+                            font-size: 13px;
+                            color: #000;
+                            width: 80mm;
+                            padding: 4mm 3mm;
+                            background: #fff;
+                        }
+                        .center { text-align: center; }
+                        .bold { font-weight: bold; }
+                        .separator {
+                            border: none;
+                            border-top: 1px dashed #000;
+                            margin: 6px 0;
+                        }
+                        .logo {
+                            font-size: 20px;
+                            font-weight: 900;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                        }
+                        .section-label {
+                            font-size: 11px;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            margin: 4px 0 2px;
+                            font-weight: bold;
+                        }
+                        .total-row {
+                            display: flex;
+                            justify-content: space-between;
+                            font-weight: bold;
+                            font-size: 15px;
+                            margin-top: 4px;
+                        }
+                        .footer-msg {
+                            text-align: center;
+                            font-size: 11px;
+                            margin-top: 8px;
+                            line-height: 1.6;
+                        }
+                        @media print {
+                            @page {
+                                size: 80mm auto;
+                                margin: 2mm;
+                            }
+                            body { width: 100%; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="center">
+                        <div class="logo">🎅 Santa Ressaca</div>
+                        <div style="font-size:11px; margin-top:2px;">Bebidas & Mini Mercado</div>
+                    </div>
+
+                    <hr class="separator">
+
+                    <div class="bold center" style="font-size:15px;">Nota Pedido #${order.id}</div>
+                    <div class="center" style="font-size:11px; margin-top:2px;">${dateStr} às ${timeStr} | Pedido: ${orderTime}</div>
+
+                    <hr class="separator">
+
+                    <div class="section-label">👤 Cliente</div>
+                    <div class="bold">${order.customer_name}</div>
+                    <div style="font-size:12px;">${order.customer_phone || ''}</div>
+
+                    <hr class="separator">
+
+                    <div class="section-label">🛒 Itens do Pedido</div>
+                    <div style="margin: 4px 0;">${itemLines}</div>
+
+                    <hr class="separator">
+
+                    <div class="section-label">📍 Endereço de Entrega</div>
+                    <div style="font-size:12px; line-height:1.5;">${order.delivery_address || 'Retirada no Local'}</div>
+
+                    <hr class="separator">
+
+                    <div class="section-label">💳 Pagamento</div>
+                    <div style="font-size:12px;">Método: <strong>${methodLabel}</strong></div>
+                    ${order.payment_method === 'dinheiro' && order.change_amount ? `<div style="font-size:12px;">Troco para: <strong>R$ ${parseFloat(order.change_amount).toFixed(2).replace('.', ',')}</strong></div>` : ''}
+                    <div class="total-row">
+                        <span>TOTAL:</span>
+                        <span>R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}</span>
+                    </div>
+
+                    <hr class="separator">
+
+                    <div class="footer-msg">
+                        Obrigado pela preferência! 🥃<br>
+                        <strong>Santa Ressaca</strong><br>
+                        "Se beber, não dirija."
+                    </div>
+                </body>
+                </html>
+            `;
+
+            const printWindow = window.open('', '_blank', 'width=320,height=600,scrollbars=yes');
+            if (!printWindow) {
+                showToast('Habilite popups para imprimir a comanda.', 'warning');
+                return;
+            }
+            printWindow.document.write(receiptHtml);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 400);
         }
 
         let pendingDeliveryOrderId = null;
@@ -2096,6 +2508,233 @@
                 updateOrderSelector();
             }
         });
+
+        // ========================================
+        // IMPORTAÇÃO EM MASSA DE PRODUTOS
+        // ========================================
+        let importSelectedFile = null;
+        let importProducts = [];
+
+        function openImportModal() {
+            document.getElementById('importModal').style.display = 'flex';
+            resetImportModal();
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').style.display = 'none';
+            resetImportModal();
+            fetchProducts(); // Refresh product list
+        }
+
+        function resetImportModal() {
+            importSelectedFile = null;
+            importProducts = [];
+            document.getElementById('import-file-input').value = '';
+            showImportStep('upload');
+            document.getElementById('import-file-preview').style.display = 'none';
+            document.getElementById('btn-analyze-import').disabled = true;
+        }
+
+        function showImportStep(step) {
+            ['upload', 'loading', 'preview', 'success'].forEach(s => {
+                document.getElementById('import-step-' + s).style.display = s === step ? '' : 'none';
+            });
+        }
+
+        // Drag and Drop
+        (() => {
+            const dz = document.getElementById('import-dropzone');
+            if (!dz) return;
+            ['dragenter', 'dragover'].forEach(evt => {
+                dz.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('drag-over'); });
+            });
+            ['dragleave', 'drop'].forEach(evt => {
+                dz.addEventListener(evt, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag-over'); });
+            });
+            dz.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    setImportFile(files[0]);
+                }
+            });
+        })();
+
+        function handleImportFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) setImportFile(file);
+        }
+
+        function setImportFile(file) {
+            const allowed = ['image/jpeg', 'image/png', 'image/webp', 'text/plain'];
+            const ext = file.name.toLowerCase();
+            if (!allowed.includes(file.type) && !ext.endsWith('.txt') && !ext.endsWith('.jpg') && !ext.endsWith('.jpeg') && !ext.endsWith('.png') && !ext.endsWith('.webp')) {
+                showToast('Formato não suportado. Use JPG, PNG, WEBP ou TXT.', 'error');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('Arquivo muito grande. Máximo 10MB.', 'error');
+                return;
+            }
+
+            importSelectedFile = file;
+            const isImg = file.type.startsWith('image');
+            document.getElementById('import-file-icon').textContent = isImg ? '🖼️' : '📄';
+            document.getElementById('import-file-name').textContent = file.name;
+            document.getElementById('import-file-size').textContent = (file.size / 1024).toFixed(1) + ' KB';
+            document.getElementById('import-file-preview').style.display = 'block';
+            document.getElementById('btn-analyze-import').disabled = false;
+        }
+
+        function clearImportFile() {
+            importSelectedFile = null;
+            document.getElementById('import-file-input').value = '';
+            document.getElementById('import-file-preview').style.display = 'none';
+            document.getElementById('btn-analyze-import').disabled = true;
+        }
+
+        async function analyzeImportFile() {
+            if (!importSelectedFile) return;
+
+            const isTxt = importSelectedFile.name.toLowerCase().endsWith('.txt') || importSelectedFile.type === 'text/plain';
+            showImportStep('loading');
+            document.getElementById('import-loading-detail').textContent = isTxt
+                ? 'Lendo arquivo de texto...'
+                : 'Enviando imagem para análise com IA... Isso pode levar até 30s.';
+
+            const formData = new FormData();
+            formData.append('file', importSelectedFile);
+
+            try {
+                const res = await fetch('/api/admin/products/import-analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    showToast(data.error || 'Erro ao analisar arquivo.', 'error');
+                    showImportStep('upload');
+                    return;
+                }
+
+                importProducts = data.products || [];
+                if (importProducts.length === 0) {
+                    showToast('Nenhum produto encontrado no arquivo.', 'error');
+                    showImportStep('upload');
+                    return;
+                }
+
+                renderImportPreview();
+                showImportStep('preview');
+                showToast(`${importProducts.length} produto(s) encontrado(s)!`, 'success');
+            } catch (e) {
+                console.error('[Import] Erro:', e);
+                showToast('Erro de conexão ao analisar arquivo.', 'error');
+                showImportStep('upload');
+            }
+        }
+
+        function renderImportPreview() {
+            const list = document.getElementById('import-products-list');
+            document.getElementById('import-count').textContent = importProducts.length;
+
+            list.innerHTML = importProducts.map((p, i) => `
+                <div class="import-row" data-index="${i}">
+                    <div>
+                        <label style="font-size: 0.65rem; color: #666; display: block; margin-bottom: 2px;">NOME</label>
+                        <input type="text" value="${(p.name || '').replace(/"/g, '&quot;')}" onchange="importProducts[${i}].name = this.value">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; color: #666; display: block; margin-bottom: 2px;">CATEGORIA</label>
+                        <select onchange="importProducts[${i}].category = this.value">
+                            <option value="Bebidas" ${p.category === 'Bebidas' ? 'selected' : ''}>Bebidas</option>
+                            <option value="Combos" ${p.category === 'Combos' ? 'selected' : ''}>Combos</option>
+                            <option value="Conveniência" ${p.category === 'Conveniência' ? 'selected' : ''}>Conveniência</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; color: #666; display: block; margin-bottom: 2px;">PREÇO</label>
+                        <input type="number" step="0.01" value="${p.price || 0}" onchange="importProducts[${i}].price = parseFloat(this.value)" style="width: 80px;">
+                    </div>
+                    <button class="import-row-del" onclick="removeImportRow(${i})" title="Remover">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function removeImportRow(index) {
+            importProducts.splice(index, 1);
+            renderImportPreview();
+        }
+
+        function addImportRow() {
+            importProducts.push({ name: '', price: 0, category: 'Bebidas', description: '', image_url: '', is_active: true });
+            renderImportPreview();
+            // Scroll to bottom
+            const list = document.getElementById('import-products-list');
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function backToUpload() {
+            showImportStep('upload');
+        }
+
+        async function confirmImport() {
+            // Collect latest values from DOM
+            const rows = document.querySelectorAll('.import-row');
+            const products = [];
+            rows.forEach((row, i) => {
+                const inputs = row.querySelectorAll('input');
+                const select = row.querySelector('select');
+                const name = inputs[0]?.value?.trim();
+                const price = parseFloat(inputs[1]?.value) || 0;
+                const category = select?.value || 'Bebidas';
+                if (name) {
+                    products.push({
+                        name,
+                        price,
+                        category,
+                        description: importProducts[i]?.description || '',
+                        image_url: '',
+                        is_active: true
+                    });
+                }
+            });
+
+            if (products.length === 0) {
+                showToast('Nenhum produto válido para importar.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btn-confirm-import');
+            btn.disabled = true;
+            btn.textContent = 'IMPORTANDO...';
+
+            try {
+                const res = await fetch('/api/admin/products/bulk-create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ products })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('import-success-msg').textContent = `${data.count} produto(s) adicionado(s) ao estoque com sucesso!`;
+                    showImportStep('success');
+                    fetchProducts();
+                } else {
+                    showToast(data.error || 'Erro ao importar produtos.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = '✅ CONFIRMAR E IMPORTAR';
+                }
+            } catch (e) {
+                console.error('[Import] Erro:', e);
+                showToast('Erro de conexão ao importar.', 'error');
+                btn.disabled = false;
+                btn.textContent = '✅ CONFIRMAR E IMPORTAR';
+            }
+        }
 
         init();
     </script>
