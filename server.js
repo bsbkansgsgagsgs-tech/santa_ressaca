@@ -143,6 +143,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
+// SEO: Rotas limpas que servem o index.html (Google crawl)
+app.get(['/combos', '/bebidas', '/mercado', '/sobre', '/contato'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Configuração do Multer para Upload de Imagens (em memória para converter em base64)
 const storage = multer.memoryStorage();
 
