@@ -143,17 +143,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname));
 
-// Configuração do Multer para Upload de Imagens
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'imagens/');
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, 'prod-' + uniqueSuffix + ext);
-    }
-});
+// Configuração do Multer para Upload de Imagens (em memória para converter em base64)
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage: storage,
@@ -495,7 +486,9 @@ app.post('/api/admin/products/upload', adminSession, requireAdmin, upload.single
         if (!req.file) {
             return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
         }
-        const imageUrl = `imagens/${req.file.filename}`;
+        // Converte para base64 data URL (persiste no banco, não depende do disco)
+        const base64 = req.file.buffer.toString('base64');
+        const imageUrl = `data:${req.file.mimetype};base64,${base64}`;
         res.json({ imageUrl });
     } catch (e) {
         console.error('[Upload] Erro:', e.message);
