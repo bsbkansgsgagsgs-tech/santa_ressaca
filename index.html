@@ -351,12 +351,12 @@
             </div>
             <nav class="nav-menu">
                 <ul>
-                    <li><a href="#inicio">Início</a></li>
-                    <li><a href="#combos">Combos</a></li>
-                    <li><a href="#bebidas">Bebidas</a></li>
-                    <li><a href="#mercado">Conveniência</a></li>
-                    <li><a href="#sobre">Sobre</a></li>
-                    <li><a href="#contato">Contato</a></li>
+                    <li><a href="/">Início</a></li>
+                    <li><a href="/combos">Combos</a></li>
+                    <li><a href="/bebidas">Bebidas</a></li>
+                    <li><a href="/mercado">Conveniência</a></li>
+                    <li><a href="/sobre">Sobre</a></li>
+                    <li><a href="/contato">Contato</a></li>
                     <li id="auth-nav-item"><a href="javascript:void(0)" onclick="openAuthModal('login')"
                             class="btn-auth-nav">Minha Conta</a></li>
                     <li id="user-nav-item" style="display: none;"><a href="javascript:void(0)"
@@ -1350,6 +1350,47 @@
         checkAuth();
         fetchInitialSettings();
         fetchProducts();
+
+        // SEO/Routing: Handle clean URLs (/combos, /bebidas, etc)
+        function handleRouting() {
+            const path = window.location.pathname;
+            const routeMap = {
+                '/': 'inicio',
+                '/combos': 'combos',
+                '/bebidas': 'bebidas',
+                '/mercado': 'mercado',
+                '/sobre': 'sobre',
+                '/contato': 'contato'
+            };
+
+            const sectionId = routeMap[path];
+            if (sectionId) {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: element.offsetTop - 80, // Offset for header
+                            behavior: 'smooth'
+                        });
+                    }, 500); // Wait for content load
+                }
+            }
+        }
+
+        // Intercept navigation to use pushState
+        document.querySelectorAll('.nav-menu a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (href && href.startsWith('/') && !href.startsWith('//')) {
+                    e.preventDefault();
+                    window.history.pushState({}, '', href);
+                    handleRouting();
+                }
+            });
+        });
+
+        window.addEventListener('popstate', handleRouting);
+        window.addEventListener('load', handleRouting);
 
         // Check for payment result in URL
         const urlParams = new URLSearchParams(window.location.search);
