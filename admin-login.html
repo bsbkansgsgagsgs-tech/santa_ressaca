@@ -104,6 +104,11 @@
                 <label>Senha de Acesso</label>
                 <input type="password" id="password" required placeholder="Senha do Admin">
             </div>
+            <div class="input-group" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <input type="checkbox" id="remember" style="width:auto; cursor:pointer;">
+                <label for="remember" style="margin-bottom:0; cursor:pointer; font-size:0.75rem;">Lembrar email e
+                    senha</label>
+            </div>
             <button type="submit" class="btn-admin">Entrar no Painel</button>
             <div id="errorMsg" class="error-msg">Acesso negado. Credenciais inválidas.</div>
 
@@ -111,10 +116,22 @@
     </div>
 
     <script>
+        // Load remembered credentials
+        window.addEventListener('load', () => {
+            const rememberedEmail = localStorage.getItem('adminEmail');
+            const rememberedPass = localStorage.getItem('adminPass');
+            if (rememberedEmail && rememberedPass) {
+                document.getElementById('email').value = rememberedEmail;
+                document.getElementById('password').value = rememberedPass;
+                document.getElementById('remember').checked = true;
+            }
+        });
+
         document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const remember = document.getElementById('remember').checked;
             const errorMsg = document.getElementById('errorMsg');
 
             try {
@@ -125,6 +142,13 @@
                 });
 
                 if (response.ok) {
+                    if (remember) {
+                        localStorage.setItem('adminEmail', email);
+                        localStorage.setItem('adminPass', password);
+                    } else {
+                        localStorage.removeItem('adminEmail');
+                        localStorage.removeItem('adminPass');
+                    }
                     window.location.href = '/dashboard';
                 } else {
                     errorMsg.style.display = 'block';
