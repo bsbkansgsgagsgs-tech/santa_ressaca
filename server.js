@@ -486,6 +486,20 @@ app.delete('/api/admin/products/:id', adminSession, requireAdmin, async (req, re
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/admin/products/reorder', adminSession, requireAdmin, async (req, res) => {
+    try {
+        const { orderedIds } = req.body;
+        if (!Array.isArray(orderedIds)) {
+            return res.status(400).json({ error: 'Lista de IDs inválida.' });
+        }
+        await db.updateProductsOrder(orderedIds);
+        res.json({ message: 'Ordem dos produtos atualizada com sucesso!' });
+    } catch (e) {
+        console.error('[Reorder] Erro:', e.message);
+        res.status(500).json({ error: 'Erro ao reordenar produtos: ' + e.message });
+    }
+});
+
 app.post('/api/admin/products/upload', adminSession, requireAdmin, upload.single('image'), (req, res) => {
     try {
         if (!req.file) {

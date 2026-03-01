@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;800;900&display=swap');
 
@@ -468,6 +469,15 @@
             font-size: 0.9rem;
             color: #fff;
             border-bottom: 1px solid var(--border);
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: var(--yellow) !important;
+        }
+
+        .admin-table tbody tr {
+            cursor: move;
         }
 
         .prod-img-table {
@@ -1304,6 +1314,7 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
+                            <th style="width: 40px;"></th> <!-- Handle -->
                             <th>IMG</th>
                             <th>PRODUTO</th>
                             <th>CATEGORIA</th>
@@ -1660,16 +1671,61 @@ Descricao: 6x Heineken + Gelo</pre>
 
         async function fetchProducts() {
             try {
-                const res = await fetch('/api/admin/products');
+                const res = await fetch('/api/admin/products?v=' + Date.now());
                 allProducts = await res.json();
                 renderProducts(allProducts);
+                initSortable();
             } catch (e) { console.error('Erro prods:', e); }
+        }
+
+        let sortableInstance = null;
+        function initSortable() {
+            const el = document.getElementById('products-tbody');
+            if (sortableInstance) sortableInstance.destroy();
+
+            sortableInstance = new Sortable(el, {
+                animation: 150,
+                handle: 'td:first-child',
+                ghostClass: 'sortable-ghost',
+                onEnd: async function () {
+                    const rows = el.querySelectorAll('tr');
+                    const orderedIds = Array.from(rows).map(row => parseInt(row.getAttribute('data-id')));
+
+                    // Instant feedback (Optimistic UI)
+                    showToast("Ordem atualizada com sucesso!", "success");
+
+                    // Update local allProducts to match the new order
+                    const newProducts = [];
+                    orderedIds.forEach(id => {
+                        const p = allProducts.find(prod => prod.id === id);
+                        if (p) newProducts.push(p);
+                    });
+                    allProducts = newProducts;
+
+                    // Sync with server in background
+                    try {
+                        const res = await fetch('/api/admin/products/reorder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderedIds })
+                        });
+                        if (!res.ok) {
+                            console.error('Erro ao salvar ordem no servidor');
+                            showToast("Erro ao sincronizar ordem", "error");
+                        }
+                    } catch (e) {
+                        console.error('Erro ao reordenar:', e);
+                        showToast("Erro de conexão ao reordenar", "error");
+                    }
+                }
+            });
         }
 
         function renderProducts(list) {
             const tbody = document.getElementById('products-tbody');
             tbody.innerHTML = list.map(p => `
-                <tr>
+                <tr data-id="${p.id}">
+                    <td style="cursor: grab; color: #444; font-size: 1.2rem; text-align: center;">⠿</td>
                     <td><img src="${p.image_url || 'https://via.placeholder.com/150'}" class="prod-img-table"></td>
                     <td style="font-weight: 700; color: #fff;">${p.name}</td>
                     <td style="color: var(--text-muted); font-size: 0.85rem;">${p.category}</td>
@@ -1679,7 +1735,7 @@ Descricao: 6x Heineken + Gelo</pre>
                             ${p.is_active ? '● ATIVO' : '● INATIVO'}
                         </span>
                     </td>
-                    <td style="text-align: right;">
+                    <td style="text-align: right; white-space: nowrap;">
                         <button class="btn-move" style="font-size: 0.8rem; padding: 6px 12px;" onclick='openProductModal(${JSON.stringify(p).replace(/'/g, "&apos;")})'>⚙️ EDITAR</button>
                     </td>
                 </tr>
@@ -1693,6 +1749,13 @@ Descricao: 6x Heineken + Gelo</pre>
                 p.category.toLowerCase().includes(term)
             );
             renderProducts(filtered);
+            // Re-init sortable after filter if we want to allow reordering filtered list? 
+            // Better to disable reordering when filtered as IDs map might be incomplete.
+            if (term) {
+                if (sortableInstance) sortableInstance.option('disabled', true);
+            } else {
+                if (sortableInstance) sortableInstance.option('disabled', false);
+            }
         }
 
         let allProducts = []; // Para busca local no edit

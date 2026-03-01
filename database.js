@@ -92,10 +92,12 @@ const Database = {
                     category TEXT,
                     image_url TEXT,
                     is_active BOOLEAN DEFAULT TRUE,
+                    display_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             `;
             await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`.catch(() => { });
+            await sql`ALTER TABLE products ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0`.catch(() => { });
 
             await sql`
                 CREATE TABLE IF NOT EXISTS settings (
@@ -225,14 +227,14 @@ const Database = {
     getProducts: async () => {
         const sql = Database.getSql();
         if (!sql) return [];
-        return await sql`SELECT * FROM products ORDER BY category, name`;
+        return await sql`SELECT * FROM products ORDER BY display_order ASC, name ASC`;
     },
 
     createProduct: async (p) => {
         const sql = Database.getSql();
         return await sql`
-            INSERT INTO products (name, description, price, category, image_url, is_active)
-            VALUES (${p.name}, ${p.description}, ${p.price}, ${p.category}, ${p.image_url}, ${p.is_active !== undefined ? p.is_active : true})
+            INSERT INTO products (name, description, price, category, image_url, is_active, display_order)
+            VALUES (${p.name}, ${p.description}, ${p.price}, ${p.category}, ${p.image_url}, ${p.is_active !== undefined ? p.is_active : true}, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM products))
             RETURNING *
         `;
     },
@@ -249,6 +251,24 @@ const Database = {
     deleteProduct: async (id) => {
         const sql = Database.getSql();
         return await sql`DELETE FROM products WHERE id = ${id}`;
+    },
+
+    updateProductsOrder: async (orderedIds) => {
+        const sql = Database.getSql();
+        if (!sql) throw new Error('Sem banco.');
+        try {
+            // Bulk update using UNNEST for better performance
+            await sql`
+                UPDATE products 
+                SET display_order = new_order
+                FROM UNNEST(${orderedIds}::int[], ${orderedIds.map((_, i) => i)}::int[]) AS t(id, new_order)
+                WHERE products.id = t.id
+            `;
+            return true;
+        } catch (e) {
+            console.error('❌ Erro ao atualizar ordem dos produtos:', e.message);
+            throw e;
+        }
     },
 
     // CONFIGURAÇÕES

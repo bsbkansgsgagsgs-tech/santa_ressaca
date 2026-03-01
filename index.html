@@ -303,6 +303,35 @@
     <!-- TOAST NOTIFICATIONS container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- MOBILE MENU DRAWER -->
+    <div class="mobile-menu-overlay" id="mobile-overlay"></div>
+    <aside class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <img src="imagens/logo.jpg" alt="Santa Ressaca" class="drawer-logo">
+            <button class="close-drawer" id="close-drawer">&times;</button>
+        </div>
+        <nav class="drawer-nav">
+            <ul>
+                <li><a href="/" onclick="toggleMobileMenu()">Início</a></li>
+                <li><a href="#combos" onclick="toggleMobileMenu()">Combos</a></li>
+                <li><a href="#bebidas" onclick="toggleMobileMenu()">Bebidas</a></li>
+                <li><a href="#mercado" onclick="toggleMobileMenu()">Conveniência</a></li>
+                <li><a href="#sobre" onclick="toggleMobileMenu()">Sobre</a></li>
+                <li><a href="#contato" onclick="toggleMobileMenu()">Contato</a></li>
+                <li id="auth-nav-item-mobile"><a href="javascript:void(0)"
+                        onclick="openAuthModal('login'); toggleMobileMenu()" class="mobile-auth-btn">Minha Conta</a>
+                </li>
+            </ul>
+        </nav>
+        <div class="drawer-footer">
+            <p>Siga-nos:</p>
+            <div class="drawer-social">
+                <a href="https://www.instagram.com/canoas_rs_santa_resaca" target="_blank">IG</a>
+                <a href="https://www.facebook.com/share/1JLBmzV5Yt/" target="_blank">FB</a>
+            </div>
+        </div>
+    </aside>
+
     <!-- MODAL LOJA FECHADA (PREMIUM) -->
     <div id="closed-modal" class="modal"
         style="display: none; align-items: center; justify-content: center; z-index: 10001;">
@@ -346,9 +375,19 @@
     <header class="main-header">
         <div class="container header-content">
             <!-- LOGO PLACEHOLDER IN HEADER -->
+            <!-- Logo -->
             <div class="logo">
                 <a href="#"><img src="imagens/logo.jpg" alt="Santa Ressaca" class="header-image-logo"></a>
             </div>
+
+            <!-- Hamburger Button -->
+            <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Abrir menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <!-- Desktop Nav -->
             <nav class="nav-menu">
                 <ul>
                     <li><a href="/">Início</a></li>
@@ -1389,6 +1428,19 @@
             });
         });
 
+        // MOBILE MENU LOGIC
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const overlay = document.getElementById('mobile-overlay');
+            drawer.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = drawer.classList.contains('active') ? 'hidden' : '';
+        }
+
+        document.getElementById('mobile-menu-toggle').addEventListener('click', toggleMobileMenu);
+        document.getElementById('close-drawer').addEventListener('click', toggleMobileMenu);
+        document.getElementById('mobile-overlay').addEventListener('click', toggleMobileMenu);
+
         window.addEventListener('popstate', handleRouting);
         window.addEventListener('load', handleRouting);
 
@@ -1406,7 +1458,7 @@
 
         async function fetchProducts() {
             try {
-                const res = await fetch('/api/products');
+                const res = await fetch('/api/products?t=' + Date.now());
                 const products = await res.json();
 
                 const grids = {
